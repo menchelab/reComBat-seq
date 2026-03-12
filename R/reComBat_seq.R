@@ -23,15 +23,17 @@
 
 reComBat_seq <- function(counts, batch, group=NULL, covar_mod=NULL, full_mod=TRUE,
                        shrink=FALSE, shrink.disp=FALSE, gene.subset.n=NULL,
-                       lambda_reg=0, alpha_reg=0){
+                       lambda_reg=0, alpha_reg=0, num_threads=1){
   ########  Preparation  ########
   counts <- as.matrix(counts)
 
   ## Does not support 1 sample per batch yet
   batch <- as.factor(batch)
   if(any(table(batch)<=1)){
-    stop("ComBat-seq doesn't support 1 sample per batch yet")
+    stop("reComBat-seq doesn't support 1 sample per batch yet")
   }
+
+  cat("Using THREADS: " , num_threads, "\n")
 
   ## Remove genes with only 0 counts in any batch
   #keep_lst <- lapply(levels(batch), function(b){
@@ -130,11 +132,11 @@ reComBat_seq <- function(counts, batch, group=NULL, covar_mod=NULL, full_mod=TRU
   ########  Estimate parameters from NB GLM  ########
   cat("Fitting the GLM model\n")
 
-  glm_f <- glmFit(dge_obj, design=design, dispersion=phi_matrix, prior.count=1e-4, lambda_reg=lambda_reg, alpha_reg=alpha_reg) #no intercept - nonEstimable; compute offset (library sizes) within function
+  glm_f <- glmFit(dge_obj, design=design, dispersion=phi_matrix, prior.count=1e-4, lambda_reg=lambda_reg, alpha_reg=alpha_reg, num_threads=num_threads) #no intercept - nonEstimable; compute offset (library sizes) within function
   alpha_g <- glm_f$coefficients[, 1:n_batch] %*% as.matrix(n_batches/n_sample) #compute intercept as batch-size-weighted average from batches
   new_offset <- t(vec2mat(getOffset(dge_obj), nrow(counts))) +   # original offset - sample (library) size
     vec2mat(alpha_g, ncol(counts))  # new offset - gene background expression # getOffset(dge_obj) is the same as log(dge_obj$samples$lib.size
-  glm_f2 <- glmFit.default(dge_obj$counts, design=design, dispersion=phi_matrix, offset=new_offset, prior.count=1e-4,maxit=51, lambda_reg=lambda_reg, alpha_reg=alpha_reg)
+  glm_f2 <- glmFit.default(dge_obj$counts, design=design, dispersion=phi_matrix, offset=new_offset, prior.count=1e-4,maxit=51, lambda_reg=lambda_reg, alpha_reg=alpha_reg, num_threads=num_threads)
   gamma_hat <- glm_f2$coefficients[, 1:n_batch]
   mu_hat <- glm_f2$fitted.values
   phi_hat <- do.call(cbind, genewise_disp_lst)
@@ -203,3 +205,4 @@ reComBat_seq <- function(counts, batch, group=NULL, covar_mod=NULL, full_mod=TRU
   #adjust_counts_whole[rm, ] <- countsOri[rm, ]
   #return(adjust_counts_whole)
 }
+

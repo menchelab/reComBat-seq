@@ -1,1 +1,13 @@
 PKG_LIBS=$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+
+UNAME := $(shell uname)
+
+ifeq ($(UNAME), Darwin)
+  PKG_CFLAGS = -Xclang -fopenmp -I/usr/local/opt/libomp/include
+  PKG_CXXFLAGS = -Xclang -fopenmp -I/usr/local/opt/libomp/include
+  PKG_LIBS = -L/usr/local/opt/libomp/lib -lomp $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+else
+  PKG_CFLAGS = -fopenmp
+  PKG_CXXFLAGS = -fopenmp
+  PKG_LIBS = -fopenmp $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+endif

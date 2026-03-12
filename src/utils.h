@@ -34,7 +34,7 @@ SEXP compute_apl (SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 
 SEXP exact_test_by_deviance(SEXP, SEXP, SEXP, SEXP, SEXP);
 
-SEXP fit_levenberg (SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+SEXP fit_levenberg (SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 
 SEXP get_levenberg_start (SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 

@@ -4,7 +4,7 @@ glmFit <- function(y, ...)
 UseMethod("glmFit")
 
 glmFit.DGEList <- function(y, design=NULL, dispersion=NULL, prior.count=0.125,
-                           start=NULL, lambda_reg=0, alpha_reg=0, ...)
+                           start=NULL, lambda_reg=0, alpha_reg=0, num_threads=1, ...)
 #	Created 11 May 2011.  Last modified 21 Nov 2018.
 {
 #	The design matrix defaults to the oneway layout defined by y$samples$group.
@@ -24,7 +24,7 @@ glmFit.DGEList <- function(y, design=NULL, dispersion=NULL, prior.count=0.125,
 
 	fit <- glmFit(y=y$counts,design=design,dispersion=dispersion,offset=offset,
 	              lib.size=NULL,weights=y$weights,prior.count=prior.count,start=start,
-	              lambda_reg=lambda_reg, alpha_reg=alpha_reg, ...)
+	              lambda_reg=lambda_reg, alpha_reg=alpha_reg, num_threads=num_threads,...)
 	fit$samples <- y$samples
 	fit$genes <- y$genes
 	fit$prior.df <- y$prior.df
@@ -33,17 +33,17 @@ glmFit.DGEList <- function(y, design=NULL, dispersion=NULL, prior.count=0.125,
 }
 
 glmFit.SummarizedExperiment <- function(y, design=NULL, dispersion=NULL, prior.count=0.125,
-                                        start=NULL, lambda_reg=0, alpha_reg=0, ...)
+                                        start=NULL, lambda_reg=0, alpha_reg=0, num_threads=1, ...)
 #	Created 19 March 2020.  Last modified 19 March 2020.
 {
 	y <- SE2DGEList(y)
 	glmFit.DGEList(y, design=design, dispersion=dispersion, prior.count=prior.count,
-	               start=start, lambda_reg=lambda_reg, alpha_reg=alpha_reg, ...)
+	               start=start, lambda_reg=lambda_reg, alpha_reg=alpha_reg, num_threads=num_threads, ...)
 }
 
 glmFit.default <- function(y, design=NULL, dispersion=NULL, offset=NULL, lib.size=NULL,
                            weights=NULL, prior.count=0.125, start=NULL, maxit=50,
-                           lambda_reg=0, alpha_reg=0, ...)
+                           lambda_reg=0, alpha_reg=0, num_threads=1,...)
 #	Fit negative binomial generalized linear model for each transcript
 #	to a series of digital expression libraries
 #	Davis McCarthy, Gordon Smyth, Yunshun Chen, Aaron Lun
@@ -111,7 +111,7 @@ glmFit.default <- function(y, design=NULL, dispersion=NULL, offset=NULL, lib.siz
 	} else {
 		fit <- mglmLevenberg(y,design=design,dispersion=dispersion.mat,offset=offset,
 		                     weights=weights,coef.start=start,maxit=250,
-		                     lambda_reg=lambda_reg,alpha_reg=alpha_reg)
+		                     lambda_reg=lambda_reg,alpha_reg=alpha_reg,num_threads=num_threads)
 		fit$method <- "levenberg"
 	}
 
@@ -122,7 +122,7 @@ glmFit.default <- function(y, design=NULL, dispersion=NULL, offset=NULL, lib.siz
 		colnames(fit$unshrunk.coefficients) <- colnames(design)
 		rownames(fit$unshrunk.coefficients) <- rownames(y)
 		fit$coefficients <- predFC(y,design,offset=offset,dispersion=dispersion.mat,prior.count=prior.count,
-		                           weights=weights,lambda_reg=lambda_reg,alpha_reg=alpha_reg, ...)*log(2)
+		                           weights=weights,lambda_reg=lambda_reg,alpha_reg=alpha_reg, num_threads=num_threads, ...)*log(2)
 	}
 	colnames(fit$coefficients) <- colnames(design)
 	rownames(fit$coefficients) <- rownames(y)
