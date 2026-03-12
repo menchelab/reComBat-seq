@@ -7,3 +7,5 @@ reComBatseq.Rproj
 .Ruserdata
 src/*.so
 src/*.o
+.DS_Store
+src/.DS_Store

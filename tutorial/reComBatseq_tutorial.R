@@ -5,7 +5,7 @@ library(Rtsne)
 library(ggplot2)
 
 # read in the dataset
-dat <- read_h5ad("tutorial/Esophagus_exp.h5ad")
+dat <- read_h5ad("Esophagus_exp.h5ad")
 sce <- dat$as_SingleCellExperiment()
 counts_df <- assay(sce)
 colnames(counts_df) <- sce@colData@rownames
