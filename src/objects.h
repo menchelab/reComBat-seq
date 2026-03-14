@@ -1,3 +1,6 @@
+// From edgeR 4.0.1 (objects.h)
+// Retained unmodified as internal C dependency
+// Original authors: edgeR team (see edgeR package)
 #include "utils.h"
 #ifndef OBJECTS_H 
 #define OBJECTS_H 

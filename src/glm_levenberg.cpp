@@ -1,3 +1,9 @@
+// Adapted from edgeR 4.0.1 (glm_levenberg.cpp)
+// Modified by Zhasmina Stoyanova, 2026.
+// Changes: added lambda_reg, alpha_reg parameters to constructor;
+//          ridge regularization term added to XtWX diagonal;
+//          elastic net gradient penalty added to dl.
+// Original authors: edgeR team (see edgeR package).
 #include "glm.h"
 
 const double one_millionth=std::pow(10, -6.0);

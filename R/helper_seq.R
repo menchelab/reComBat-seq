@@ -1,3 +1,7 @@
+# The following helper functions are adapted from ComBat-seq (Zhang et al. 2020),
+# originally implemented in the sva package (https://github.com/zhangyuqing/ComBat-seq).
+# vec2mat, monte_carlo_int_NB, match_quantiles, mapDisp
+
 ####  Expand a vector into matrix (columns as the original vector)
 vec2mat <- function(vec, n_times){
   return(matrix(rep(vec, n_times), ncol=n_times, byrow=FALSE))

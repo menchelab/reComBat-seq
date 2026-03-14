@@ -1,3 +1,8 @@
+# Adapted from edgeR 4.0.1 (dispCoxReid.R)
+# Modified by Zhasmina Stoyanova, 2026.
+# Changes: added lambda_reg and alpha_reg parameters for elastic net regularization,
+# passed through to adjustedProfileLik calls.
+# Original authors: Gordon Smyth, Davis McCarthy (see inline comments).
 dispCoxReid <- function(y, design=NULL, offset=NULL, weights=NULL, AveLogCPM=NULL,
                         interval=c(0,4), tol=1e-5, min.row.sum=5, subset=10000,
                         lambda_reg=0, alpha_reg=0)
@@ -34,8 +39,7 @@ dispCoxReid <- function(y, design=NULL, offset=NULL, weights=NULL, AveLogCPM=NUL
 
 #	Subsetting
 	if(!is.null(subset) && subset<=nrow(y)/2) {
-		if(is.null(AveLogCPM)) AveLogCPM <- aveLogCPM(y,offset=offset,weights=weights,
-		                                              lambda_reg=lambda_reg, alpha_reg=alpha_reg)
+		if(is.null(AveLogCPM)) AveLogCPM <- aveLogCPM(y,offset=offset,weights=weights)
 		i <- systematicSubset(subset,AveLogCPM)
 		y <- y[i,,drop=FALSE]
 		offset <- offset[i,,drop=FALSE]

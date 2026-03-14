@@ -1,3 +1,8 @@
+# Adapted from edgeR 4.0.1 (mglmLevenberg.R)
+# Modified by Zhasmina Stoyanova, 2026
+# Changes: added lambda_reg, alpha_reg, and num_threads parameters for elastic net
+# regularization and OpenMP parallelization, passed through to .cxx_fit_levenberg.
+# Original authors: edgeR team (see edgeR package).
 mglmLevenberg <- function(y, design, dispersion=0, offset=0, weights=NULL,
                           coef.start=NULL, start.method="null", maxit=200, tol=1e-06,
                           lambda_reg=0, alpha_reg=0, num_threads=1)
@@ -29,7 +34,6 @@ mglmLevenberg <- function(y, design, dispersion=0, offset=0, weights=NULL,
 	weights <- .compressWeights(y, weights)
 
 #	Initializing values for the coefficients at reasonable best guess with linear models.
-# IMPORTANT: MODIFY THE DESIGN MATRIX TO REMOVE THE LINEAR DEPENDENT COLUMNS
 	if(is.null(coef.start)) {
 		start.method <- match.arg(start.method, c("null","y"))
 		beta <- .Call(.cxx_get_levenberg_start, y, offset, dispersion, weights, design, start.method=="null")

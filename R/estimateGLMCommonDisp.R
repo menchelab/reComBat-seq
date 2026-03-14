@@ -1,3 +1,8 @@
+# Adapted from edgeR 4.0.1 (estimateGLMCommonDisp.R)
+# Modified by Zhasmina Stoyanova, 2026
+# Changes: added lambda_reg and alpha_reg parameters for elastic net regularization,
+# passed through both S3 methods to dispCoxReid calls.
+# Original authors: edgeR team (see edgeR package).
 estimateGLMCommonDisp <- function(y, ...)
 UseMethod("estimateGLMCommonDisp")
 
@@ -6,7 +11,7 @@ estimateGLMCommonDisp.DGEList <- function(y, design=NULL, method="CoxReid", subs
 {
 #	Check y
 	y <- validDGEList(y)
-	AveLogCPM <- aveLogCPM(y, dispersion=0.05, lambda_reg=lambda_reg, alpha_reg=alpha_reg)
+	AveLogCPM <- aveLogCPM(y, dispersion=0.05)
 
 	disp <- estimateGLMCommonDisp(y=y$counts, design=design, offset=getOffset(y),
 	                              method=method, subset=subset, AveLogCPM=AveLogCPM,
@@ -14,7 +19,7 @@ estimateGLMCommonDisp.DGEList <- function(y, design=NULL, method="CoxReid", subs
 	                              alpha_reg=alpha_reg, ...)
 
 	y$common.dispersion <- disp
-	y$AveLogCPM <- aveLogCPM(y, dispersion=disp, lambda_reg=lambda_reg, alpha_reg=alpha_reg)
+	y$AveLogCPM <- aveLogCPM(y, dispersion=disp)
 	y
 }
 
@@ -46,7 +51,7 @@ estimateGLMCommonDisp.default <- function(y, design=NULL, offset=NULL, method="C
 	if(is.null(offset)) offset <- log(colSums(y))
 
 #	Check AveLogCPM
-	if(is.null(AveLogCPM)) AveLogCPM <- aveLogCPM(y, offset=offset, weights=weights, lambda_reg=lambda_reg, alpha_reg=alpha_reg)
+	if(is.null(AveLogCPM)) AveLogCPM <- aveLogCPM(y, offset=offset, weights=weights)
 
 #	Call lower-level function
 	disp <- switch(method,

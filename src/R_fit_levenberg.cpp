@@ -1,3 +1,9 @@
+// Adapted from edgeR 4.0.1 (R_fit_levenberg.cpp)
+// Modified by Zhasmina Stoyanova, 2026
+// Changes: added lambda_reg, alpha_reg, num_threads parameters;
+//          OpenMP parallelization with thread-local workspaces;
+//          thread-safe copying of compressed_matrix rows via critical section.
+// Original authors: edgeR team (see edgeR package).
 #include "glm.h"
 #include "objects.h"
 
@@ -62,6 +68,7 @@ SEXP fit_levenberg (SEXP y, SEXP offset, SEXP disp, SEXP weights, SEXP design,
       // Add thread-local buffers for row data
       std::vector<double> thread_offset(num_libs);
       std::vector<double> thread_disp(num_libs);
+      std::vector<double> thread_weights(num_libs); 
 
     #pragma omp single
     {
@@ -80,6 +87,8 @@ SEXP fit_levenberg (SEXP y, SEXP offset, SEXP disp, SEXP weights, SEXP design,
       // compressed_matrix::get_row() returns a pointer to a shared member variable
       // that gets overwritten on each call, so we must copy to thread-local storage
       // before passing to fit() i think
+      // Pre-buffering all rows upfront
+      // was rejected due to memory cost at scale (O(num_tags * num_libs))
     #pragma omp critical(get_rows)
     {
       const double* offset_ptr = allo.get_row(tag);
@@ -87,12 +96,15 @@ SEXP fit_levenberg (SEXP y, SEXP offset, SEXP disp, SEXP weights, SEXP design,
 
       const double* disp_ptr = alld.get_row(tag);
       std::copy(disp_ptr, disp_ptr + num_libs, thread_disp.begin());
+
+      const double* weights_ptr = allw.get_row(tag);           
+      std::copy(weights_ptr, weights_ptr + num_libs, thread_weights.begin()); 
     }
 
     if (thread_glbg.fit(thread_current.data(),
                         thread_offset.data(),
                         thread_disp.data(),
-                        allw.get_row(tag),
+                        thread_weights.data(),
                         thread_tmp_fitted.data(),
                         thread_tmp_beta.data())) {
 

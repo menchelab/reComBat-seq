@@ -1,3 +1,7 @@
+// Adapted from edgeR 4.0.1 (R_compute_apl.cpp)
+// Retained as a local copy because compute_apl is a compiled C++ symbol
+// and cannot be called across package boundaries via edgeR:::
+// called from adjustedProfileLik.R
 #include "glm.h"
 #include "objects.h"
 
@@ -40,6 +44,9 @@ SEXP compute_apl(SEXP y, SEXP means, SEXP disps, SEXP weights, SEXP adjust, SEXP
         auto cmIt=curmeans.begin();
         for (int lib=0; lib<num_libs; ++lib, ++cmIt) {
             if ((*cmIt)==0) {
+                if (do_adjust) {
+                    working_weights[lib] = 0;
+                }
                 continue; // Mean should only be zero if count is zero, where the log-likelihood would then be 0.
             }
 

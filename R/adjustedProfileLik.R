@@ -1,6 +1,11 @@
 adjustedProfileLik <- function(dispersion, y, design, offset, weights=NULL,
                                adjust=TRUE, start=NULL, get.coef=FALSE,
                                lambda_reg=0, alpha_reg=0)
+# Adapted from edgeR 4.0.1 (adjustedProfileLik.R)
+# Modified by Zhasmina Stoyanova, 2026.
+# Changes: added lambda_reg and alpha_reg parameters for elastic net regularization,
+# passed through to the GLM fitting chain via glmFit.
+# Original authors: Yunshun Chen, Gordon Smyth, Aaron Lun (see below).
 #	Tagwise Cox-Reid adjusted profile log-likelihoods for the dispersion.
 #	dispersion can be a scalar or a tagwise vector.
 #	Computationally, dispersion can also be a matrix, but the apl is still computed tagwise.

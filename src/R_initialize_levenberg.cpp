@@ -1,3 +1,8 @@
+// Adapted from edgeR 4.0.1 (R_initialize_levenberg.cpp)
+// Modified by Zhasmina Stoyanova, 2026
+// Changes: disabled QR-based initialization in null_method branch due to
+// rank-deficient design matrices in batch correction scenarios (see inline comment).
+// Original authors: edgeR team (see edgeR package).
 #include "glm.h"
 #include "objects.h"
 
@@ -127,6 +132,10 @@ SEXP get_levenberg_start(SEXP y, SEXP offset, SEXP disp, SEXP weights, SEXP desi
             std::fill(current.begin(), current.end(), std::log(sum_exprs/sum_weight));
 
             // Performing the QR decomposition and taking the solution.
+		// NOTE: QR-based initialization is intentionally disabled for the null_method branch.
+		// The QR decomposition can fail or produce poor starting values when the design matrix
+		// is rank-deficient or near-singular, which is the main topic of this tool.
+		// Zero-initialized coefficients are used instead as starting values for Levenberg-Marquardt.
             //QR.solve(current.data());
             //auto curout=output.row(tag);
             //std::copy(QR.effects.begin(), QR.effects.begin()+num_coefs, curout.begin());

@@ -1,10 +1,11 @@
+// Adapted from edgeR 4.0.1 (glm.h)
+// Modified by Zhasmina Stoyanova, 2026.
+// Changes: added lambda_reg, alpha_reg to glm_levenberg constructor and private members.
+// Original authors: edgeR team (see edgeR package).
 #ifndef GLM_H
 #define GLM_H
 
 #include "utils.h"
-
-std::pair<double,bool> glm_one_group(int, const double*, const double*,
-        const double*, const double*, int, double, double, double, double);
 
 void compute_xtwx(int, int, const double*, const double*, double*);
 
@@ -37,7 +38,7 @@ private:
 	void autofill(const double*, const double*, double*);
 };
 
-double compute_unit_nb_deviance(double, double, double);
+extern "C" double compute_unit_nb_deviance(double, double, double);
 
 class adj_coxreid {
 public:

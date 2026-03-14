@@ -1,3 +1,8 @@
+# Adapted from edgeR 4.0.1 (estimateGLMTagwiseDisp.R)
+# Modified by Zhasmina Stoyanova, 2026
+# Changes: added lambda_reg and alpha_reg parameters for elastic net regularization,
+# passed through both S3 methods to dispCoxReidInterpolateTagwise calls.
+# Original authors: edgeR team (see edgeR package).
 estimateGLMTagwiseDisp <- function(y, ...)
 UseMethod("estimateGLMTagwiseDisp")
 
@@ -13,7 +18,7 @@ estimateGLMTagwiseDisp.DGEList <- function(y, design=NULL, prior.df=10, trend=!i
 		if(is.null(dispersion)) stop("No common.dispersion found in data object. Run estimateGLMCommonDisp first.")
 	}
 
-	if(is.null(y$AveLogCPM)) y$AveLogCPM <- aveLogCPM(y, lambda_reg=lambda_reg, alpha_reg=alpha_reg)
+	if(is.null(y$AveLogCPM)) y$AveLogCPM <- aveLogCPM(y)
 	ntags <- nrow(y$counts)
 	if(is.null(span)) if(ntags>10) span <- (10/ntags)^0.23 else span <- 1
 	y$span <- span
@@ -57,7 +62,7 @@ estimateGLMTagwiseDisp.default <- function(y, design=NULL, offset=NULL, dispersi
 	if(is.null(span)) if(ntags>10) span <- (10/ntags)^0.23 else span <- 1
 
 #	Check AveLogCPM
-	if(is.null(AveLogCPM)) AveLogCPM <- aveLogCPM(y, offset=offset, weights=weights, lambda_reg=lambda_reg, alpha_reg=alpha_reg)
+	if(is.null(AveLogCPM)) AveLogCPM <- aveLogCPM(y, offset=offset, weights=weights)
 
 #	Call Cox-Reid grid method
 	tagwise.dispersion <- dispCoxReidInterpolateTagwise(y, design, offset=offset, dispersion, trend=trend,

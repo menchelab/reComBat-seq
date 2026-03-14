@@ -1,3 +1,8 @@
+# Adapted from edgeR 4.0.1 (dispCoxReidInterpolateTagwise.R)
+# Modified by Zhasmina Stoyanova, 2026.
+# Changes: added lambda_reg and alpha_reg parameters for elastic net regularization,
+# passed through to adjustedProfileLik, and recursive Recall call.
+# Original authors: Yunshun Chen, Gordon Smyth (see inline comments).
 dispCoxReidInterpolateTagwise <- function(y, design, offset=NULL, dispersion, trend=TRUE,
                                           AveLogCPM=NULL, min.row.sum=5, prior.df=10,
                                           span=0.3, grid.npts=11, grid.range=c(-6,6),
@@ -28,7 +33,7 @@ dispCoxReidInterpolateTagwise <- function(y, design, offset=NULL, dispersion, tr
 	offset <- expandAsMatrix(offset,dim(y))
 
 #	Check AveLogCPM
-	if(is.null(AveLogCPM)) AveLogCPM <- aveLogCPM(y,lib.size=lib.size, lambda_reg=lambda_reg, alpha_reg=alpha_reg)
+	if(is.null(AveLogCPM)) AveLogCPM <- aveLogCPM(y,lib.size=lib.size)
 
 #	Check dispersion
 	ldisp <- length(dispersion)
@@ -43,7 +48,7 @@ dispCoxReidInterpolateTagwise <- function(y, design, offset=NULL, dispersion, tr
 	if(any(!i)) {
 		if(any(i)) dispersion[i] <- Recall(y=y[i,,drop=FALSE],design=design,offset=offset[i,,drop=FALSE],dispersion=dispersion[i],
 		                                   AveLogCPM=AveLogCPM[i],grid.npts=grid.npts,min.row.sum=0,prior.df=prior.df,span=span,trend=trend,
-		                                   weights=weights[i,,drop=FALSE],lambda_reg=lambda_reg,alpha_reg=alpha_reg)
+		                                   weights=weights[i,,drop=FALSE])
 		return(dispersion)
 	}
 

@@ -1,3 +1,7 @@
+# Based on ComBat_seq from the sva package (Zhang et al. 2020).
+# Extended by Zhasmina Stoyanova, 2026
+# Changes: replaced standard NB GLM with elastic net regularized NB GLM;
+#          added lambda_reg, alpha_reg, num_threads parameters throughout.
 #' Adjust for batch effects using an empirical Bayes framework in RNA-seq raw counts
 #'
 #' reComBat_seq is an extension to the ComBat_seq method using regularized Negative Binomial model.
@@ -33,7 +37,7 @@ reComBat_seq <- function(counts, batch, group=NULL, covar_mod=NULL, full_mod=TRU
     stop("reComBat-seq doesn't support 1 sample per batch yet")
   }
 
-  cat("Using THREADS: " , num_threads, "\n")
+  message("Using THREADS: " , num_threads, "\n")
 
   ## Remove genes with only 0 counts in any batch
   #keep_lst <- lapply(levels(batch), function(b){
@@ -105,7 +109,7 @@ reComBat_seq <- function(counts, batch, group=NULL, covar_mod=NULL, full_mod=TRU
   disp_common <- sapply(1:n_batch, function(i){
     if((n_batches[i] <= ncol(design)-ncol(batchmod)+1) | qr(mod[batches_ind[[i]], ])$rank < ncol(mod)){
       # not enough residual degree of freedom
-      return(estimateGLMCommonDisp(counts[, batches_ind[[i]]], design=NULL, subset=nrow(counts), lambda_reg=lambda_reg, alpha_reg=alpha_reg))
+      return(estimateGLMCommonDisp(counts[, batches_ind[[i]]], design=NULL, subset=nrow(counts)))
     }else{
       return(estimateGLMCommonDisp(counts[, batches_ind[[i]]], design=mod[batches_ind[[i]], ], subset=nrow(counts), lambda_reg=lambda_reg, alpha_reg=alpha_reg))
     }

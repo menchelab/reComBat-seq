@@ -1,3 +1,8 @@
+# Adapted from edgeR 4.0.1 (CompressedMatrix.R)
+# Original authors: Aaron Lun and edgeR team (see edgeR package).
+# Included verbatim as these functions are not exported by edgeR
+# and are required internally by reComBatseq for offset, weight,
+# and dispersion compression prior to C++ calls.
 makeCompressedMatrix <- function(x, dims, byrow=TRUE) 
 # Coerces a NULL, scalar, vector or matrix to a compressed matrix,
 # Determines whether the rows or columns are intended to be 

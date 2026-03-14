@@ -1,3 +1,8 @@
+# Adapted from edgeR 4.0.1 (glmfit.R)
+# Modified by Zhasmina Stoyanova, 2026
+# Changes: added lambda_reg, alpha_reg, and num_threads parameters for elastic net
+# regularization and OpenMP parallelization, passed through to mglmLevenberg and predFC calls.
+# Original authors: Davis McCarthy, Gordon Smyth, Yunshun Chen, Aaron Lun (see inline comments).
 #  FIT GENERALIZED LINEAR MODELS
 
 glmFit <- function(y, ...)
@@ -22,14 +27,14 @@ glmFit.DGEList <- function(y, design=NULL, dispersion=NULL, prior.count=0.125,
 	offset <- getOffset(y)
 	if(is.null(y$AveLogCPM)) y$AveLogCPM <- aveLogCPM(y)
 
-	fit <- glmFit(y=y$counts,design=design,dispersion=dispersion,offset=offset,
+	fit <- glmFit.default(y=y$counts,design=design,dispersion=dispersion,offset=offset,
 	              lib.size=NULL,weights=y$weights,prior.count=prior.count,start=start,
 	              lambda_reg=lambda_reg, alpha_reg=alpha_reg, num_threads=num_threads,...)
 	fit$samples <- y$samples
 	fit$genes <- y$genes
 	fit$prior.df <- y$prior.df
 	fit$AveLogCPM <- y$AveLogCPM
-	new("DGEGLM",fit)
+	fit
 }
 
 glmFit.SummarizedExperiment <- function(y, design=NULL, dispersion=NULL, prior.count=0.125,
@@ -104,8 +109,7 @@ glmFit.default <- function(y, design=NULL, dispersion=NULL, offset=NULL, lib.siz
 	group <- designAsFactor(design)
 	if(nlevels(group)==ncol(design)) {
 		fit <- mglmOneWay(y,design=design,group=group,dispersion=dispersion.mat,offset=offset,
-		                  weights=weights,coef.start=start,maxit=maxit,lambda_reg=lambda_reg,
-		                  alpha_reg=alpha_reg)
+		                  weights=weights,coef.start=start,maxit=maxit)
 		fit$deviance <- nbinomDeviance(y=y,mean=fit$fitted.values,dispersion=dispersion.mat,weights=weights)
 		fit$method <- "oneway"
 	} else {
@@ -199,6 +203,12 @@ glmLRT <- function(glmfit,coef=ncol(glmfit$design),contrast=NULL)
 	design0 <- design[,-coef,drop=FALSE]
 
 #	Null fit
+#	The new QL method requires working.dispersion to fit the model which is dispersion divided by average QL dispersion
+	if(is.null(glmfit$average.ql.dispersion)) {
+		dispersion <- glmfit$dispersion
+	} else {
+		dispersion <- glmfit$dispersion/glmfit$average.ql.dispersion
+	}
 	fit.null <- glmFit(glmfit$counts,design=design0,offset=glmfit$offset,weights=glmfit$weights,dispersion=glmfit$dispersion,prior.count=0)
 
 #	Likelihood ratio statistic

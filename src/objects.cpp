@@ -1,3 +1,6 @@
+// From edgeR 4.0.1 (objects.cpp)
+// Retained unmodified as internal C dependency
+// Original authors: edgeR team (see edgeR package)
 #include "objects.h"
 
 compressed_matrix::compressed_matrix(Rcpp::RObject incoming) : mat(incoming) {

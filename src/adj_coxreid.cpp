@@ -1,3 +1,6 @@
+// From edgeR 4.0.1 (adj_coxreid.cpp)
+// Retained unmodified as an internal C++ dependency of R_compute_apl.cpp.
+// Original authors: edgeR team (see edgeR package).
 #include "glm.h"
 
 const char uplo='U';

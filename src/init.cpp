@@ -1,3 +1,7 @@
+// Adapted from edgeR 4.0.1 (init.cpp)
+// Modified by Zhasmina Stoyanova, 2026.
+// Changes: removed unused symbol registrations; 
+// Original authors: edgeR team (see edgeR package).
 #include "R_ext/Rdynload.h"
 #include "R_ext/Visibility.h"
 #include "utils.h"
@@ -7,16 +11,10 @@
 extern "C" {
 
 static const R_CallMethodDef all_call_entries[] = {
-	CALLDEF(compute_nbdev, 5),
 	CALLDEF(compute_apl, 6),
-	CALLDEF(maximize_interpolant, 2),
 
 	CALLDEF(fit_levenberg, 11),
 	CALLDEF(get_levenberg_start, 6),
-	CALLDEF(fit_one_group, 9),
-	CALLDEF(get_one_way_fitted, 3),
-	CALLDEF(add_prior_count, 3),
-    CALLDEF(ave_log_cpm, 9),
 
 	{NULL, NULL, 0}
 };
