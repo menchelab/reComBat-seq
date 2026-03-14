@@ -9,7 +9,7 @@ glmFit <- function(y, ...)
 UseMethod("glmFit")
 
 glmFit.DGEList <- function(y, design=NULL, dispersion=NULL, prior.count=0.125,
-                           start=NULL, lambda_reg=0, alpha_reg=0, num_threads=1, ...)
+                           start=NULL, lambda_reg=0, alpha_reg=0, num_threads=0, ...)
 #	Created 11 May 2011.  Last modified 21 Nov 2018.
 {
 #	The design matrix defaults to the oneway layout defined by y$samples$group.
@@ -38,7 +38,7 @@ glmFit.DGEList <- function(y, design=NULL, dispersion=NULL, prior.count=0.125,
 }
 
 glmFit.SummarizedExperiment <- function(y, design=NULL, dispersion=NULL, prior.count=0.125,
-                                        start=NULL, lambda_reg=0, alpha_reg=0, num_threads=1, ...)
+                                        start=NULL, lambda_reg=0, alpha_reg=0, num_threads=0, ...)
 #	Created 19 March 2020.  Last modified 19 March 2020.
 {
 	y <- SE2DGEList(y)
@@ -48,7 +48,7 @@ glmFit.SummarizedExperiment <- function(y, design=NULL, dispersion=NULL, prior.c
 
 glmFit.default <- function(y, design=NULL, dispersion=NULL, offset=NULL, lib.size=NULL,
                            weights=NULL, prior.count=0.125, start=NULL, maxit=50,
-                           lambda_reg=0, alpha_reg=0, num_threads=1,...)
+                           lambda_reg=0, alpha_reg=0, num_threads=0,...)
 #	Fit negative binomial generalized linear model for each transcript
 #	to a series of digital expression libraries
 #	Davis McCarthy, Gordon Smyth, Yunshun Chen, Aaron Lun

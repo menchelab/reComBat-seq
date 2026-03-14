@@ -5,7 +5,7 @@
 # Original authors: edgeR team (see edgeR package).
 mglmLevenberg <- function(y, design, dispersion=0, offset=0, weights=NULL,
                           coef.start=NULL, start.method="null", maxit=200, tol=1e-06,
-                          lambda_reg=0, alpha_reg=0, num_threads=1)
+                          lambda_reg=0, alpha_reg=0, num_threads=0)
 #	Fit genewise negative binomial glms with log-link
 #	using Levenberg damping to ensure convergence
 

@@ -16,6 +16,7 @@
 #' @param gene.subset.n Number of genes to use in empirical Bayes estimation, only useful when shrink = TRUE
 #' @param lambda_reg Regularization strength
 #' @param alpha_reg Elastic Net Tuner, 1 for pure LASSO, 0 for pure ridge
+#' @param num_threads Threads for Paralellisation
 #' @return data A probe x sample count matrix, adjusted for batch effects.
 #'
 #' @examples
@@ -27,7 +28,7 @@
 
 reComBat_seq <- function(counts, batch, group=NULL, covar_mod=NULL, full_mod=TRUE,
                        shrink=FALSE, shrink.disp=FALSE, gene.subset.n=NULL,
-                       lambda_reg=0, alpha_reg=0, num_threads=1){
+                       lambda_reg=0, alpha_reg=0, num_threads=0){
   ########  Preparation  ########
   counts <- as.matrix(counts)
 

@@ -6,7 +6,7 @@
 predFC <- function(y,design,prior.count=0.125,offset=NULL,dispersion=NULL,weights=NULL,lambda_reg=0,alpha_reg=0,...)
 UseMethod("predFC")
 
-predFC.DGEList <- function(y,design,prior.count=0.125,offset=NULL,dispersion=NULL,weights=NULL,lambda_reg=0,alpha_reg=0,num_threads=1,...)
+predFC.DGEList <- function(y,design,prior.count=0.125,offset=NULL,dispersion=NULL,weights=NULL,lambda_reg=0,alpha_reg=0,num_threads=0,...)
 {
 	if(is.null(offset)) offset <- getOffset(y)
 	if(is.null(dispersion)) dispersion <- getDispersion(y)
@@ -17,14 +17,14 @@ predFC.DGEList <- function(y,design,prior.count=0.125,offset=NULL,dispersion=NUL
 	predFC.default(y=y$counts,design=design,prior.count=prior.count,offset=offset,dispersion=dispersion,weights=weights,lambda_reg=lambda_reg,alpha_reg=alpha_reg,num_threads=num_threads,...)
 }
 
-predFC.SummarizedExperiment <- function(y,design,prior.count=0.125,offset=NULL,dispersion=NULL,weights=NULL,lambda_reg=0,alpha_reg=0,num_threads=1,...)
+predFC.SummarizedExperiment <- function(y,design,prior.count=0.125,offset=NULL,dispersion=NULL,weights=NULL,lambda_reg=0,alpha_reg=0,num_threads=0,...)
 #	Created 03 April 2020.  Last modified 03 April 2020.
 {
 	y <- SE2DGEList(y)
 	predFC.DGEList(y, design=design, prior.count=prior.count, offset=offset, dispersion=dispersion, weights=weights,lambda_reg=lambda_reg,alpha_reg=alpha_reg,num_threads=num_threads,...)
 }
 
-predFC.default <- function(y,design,prior.count=0.125,offset=NULL,dispersion=0,weights=NULL,lambda_reg=0,alpha_reg=0,num_threads=1,...)
+predFC.default <- function(y,design,prior.count=0.125,offset=NULL,dispersion=0,weights=NULL,lambda_reg=0,alpha_reg=0,num_threads=0,...)
 #	Shrink log-fold-changes towards zero by augmenting data counts
 #	Gordon Smyth and Belinda Phipson
 #	17 Aug 2011.  Last modified 9 July 2017.
