@@ -1,100 +1,63 @@
-library(anndataR)
+# Adapted from ComBat-seq (Zhang et al., 2020)
+# Original source: https://github.com/zhangyuqing/ComBat-seq
 library(reComBatseq)
-library(SingleCellExperiment)
-library(Rtsne)
-library(ggplot2)
+library(sva)
 
 # read in the dataset
-dat <- read_h5ad("Esophagus_exp.h5ad")
-sce <- dat$as_SingleCellExperiment()
-counts_df <- assay(sce)
-colnames(counts_df) <- sce@colData@rownames
+write.csv(cts_sub, "test_matrix.csv")
+write.csv(as.data.frame(batch_sub, as.character(group_sub)), "test_metadata.csv")
 
-## Remove genes with near 0 counts
-keep_lst_genes <- which(apply(counts_df, 1, function(x){sum(x)>ncol(counts_df)}))
-rm_genes <- setdiff(1:nrow(counts_df), keep_lst_genes)
-counts_df_reduced <- counts_df[keep_lst_genes, ]
-
-cat("Gene Amount after Removal: ", nrow(counts_df_reduced), "\n")
-
-batches <- sce[["batch"]]
-group <- sce[["disease"]]
-
-# which batches contain more than 1 sample
-valid_batches = names(table(batches)[table(batches) > 1])
-keep_lst_batches = which(batches %in% valid_batches)
-rm_batches <- setdiff(1:ncol(counts_df_reduced), keep_lst_batches)
-counts_df_reduced <- counts_df_reduced[,keep_lst_batches]
-
-batches <- droplevels(batches[keep_lst_batches])
-group <- droplevels(group[keep_lst_batches])
-
-# batch correction
-recombatseq_df <- reComBat_seq(counts_df_reduced, batch = batches, group = group,
-                             lambda_reg=0.8, alpha_reg=0.3)
+cts_sub <- as.matrix(read.csv("tutorial/test_matrix.csv", row.names = "X"))
+metadata <- read.csv("tutorial/test_metadata.csv")
+group_sub <- as.factor(metadata$X)
+batch_sub <- metadata$batch_sub
 
 # batch correction - confounded design
-covmatdf <- as.data.frame(cbind(group, group))
+covmatdf <- as.data.frame(cbind(group_sub, group_sub))
 covmatdf[] <- lapply(covmatdf, as.factor)
 colnames(covmatdf) <- c("test1", "test2")
-covmat_model <- model.matrix(~., data = covmatdf)[, -1]
+covmat <- model.matrix(~., data = covmatdf)[, -1]
 
-recombatseq_df_conf <- reComBat_seq(counts_df_reduced, batch = batches, covar_mod = covmat_model,
-                                   lambda_reg=0.8, alpha_reg=0.3)
+## Normalize library size - divide each column by its sum
+cts_norm <- apply(cts_sub, 2, function(x){x/sum(x)})
+cts_adj_norm <- apply(combatseq_df, 2, function(x){x/sum(x)})
+cts_og_norm <- apply(combatseq_og_df, 2, function(x){x/sum(x)})
 
+library(DESeq2)
+library(scales)
+library(ggplot2)
+library(ggpubr)
 
+## PCA
+col_data <- data.frame(Batch=factor(batch_sub), Group=group_sub)
+rownames(col_data) <- colnames(cts_sub)
 
-# PLOT PCA - raw data
-# Calculate tSNE using Rtsne(0 function)
-tsne_raw <- Rtsne(t(counts_df_reduced), check_duplicates = FALSE,
-                  perplexity = floor((ncol(counts_df_reduced) - 1) / 3))
-
-
-# Conversion of matrix to dataframe
-tsne_plot <- data.frame(x = tsne_raw$Y[,1],
-                        y = tsne_raw$Y[,2],
-                        batches = as.factor(batches),
-                        group = as.factor(group))
-
-# Plotting the plot using ggplot() function
-ggplot2::ggplot(tsne_plot) + geom_point(aes(x=x, y=y, colour=group, shape=batches), size=3) +
-  theme_bw()
-
+seobj <- SummarizedExperiment(assays=cts_norm, colData=col_data)
+pca_obj <- plotPCA(DESeqTransform(seobj), intgroup=c("Batch", "Group"))
+plt <- ggplot(pca_obj$data, aes(x=PC1, y=PC2, color=Batch, shape=Group)) +
+  geom_point() +
+  labs(x=sprintf("PC1: %s Variance", percent(pca_obj$plot_env$percentVar[1])),
+       y=sprintf("PC2: %s Variance", percent(pca_obj$plot_env$percentVar[2])),
+       title="Unadjusted")
+plt
 ggsave("tutorial/PCA_raw.png", height=5, width=6, dpi=300)
 
+seobj_adj <- SummarizedExperiment(assays=cts_adj_norm, colData=col_data)
+pca_obj_adj <- plotPCA(DESeqTransform(seobj_adj), intgroup=c("Batch", "Group"))
+plt_adj <- ggplot(pca_obj_adj$data, aes(x=PC1, y=PC2, color=Batch, shape=Group)) +
+  geom_point() +
+  labs(x=sprintf("PC1: %s Variance", percent(pca_obj_adj$plot_env$percentVar[1])),
+       y=sprintf("PC2: %s Variance", percent(pca_obj_adj$plot_env$percentVar[2])),
+       title="reComBat-Seq (singular design)")
+plt_adj
+ggsave("tutorial/PCA_recombatseq.png", height=5, width=6, dpi=300)
 
-# PLOT PCA - corrected data
-# Calculate tSNE using Rtsne(0 function)
-tsne_out <- Rtsne(t(recombatseq_df), check_duplicates = FALSE,
-                  perplexity = floor((ncol(recombatseq_df) - 1) / 3))
+seobj_adjori <- SummarizedExperiment(assays=cts_og_norm, colData=col_data)
+pca_obj_adjori <- plotPCA(DESeqTransform(seobj_adjori), intgroup=c("Batch", "Group"))
+plt_adjori <- ggplot(pca_obj_adjori$data, aes(x=PC1, y=PC2, color=Batch, shape=Group)) +
+  geom_point() +
+  labs(x=sprintf("PC1: %s Variance", percent(pca_obj_adjori$plot_env$percentVar[1])),
+       y=sprintf("PC2: %s Variance", percent(pca_obj_adjori$plot_env$percentVar[2])),
+       title="Original ComBat-Seq")
 
-
-# Conversion of matrix to dataframe
-tsne_plot <- data.frame(x = tsne_out$Y[,1],
-                        y = tsne_out$Y[,2],
-                        batches = as.factor(batches),
-                        group = as.factor(group))
-
-# Plotting the plot using ggplot() function
-ggplot2::ggplot(tsne_plot) + geom_point(aes(x=x, y=y, colour=group, shape=batches), size=3) +
-  theme_bw()
-ggsave("tutorial/PCA_corrected.png", height=5, width=6, dpi=300)
-
-
-# PLOT PCA - corrected confounded data
-# Calculate tSNE using Rtsne(0 function)
-tsne_cor <- Rtsne(t(recombatseq_df_conf), check_duplicates = FALSE,
-                  perplexity = floor((ncol(recombatseq_df_conf) - 1) / 3))
-
-
-# Conversion of matrix to dataframe
-tsne_plot <- data.frame(x = tsne_cor$Y[,1],
-                        y = tsne_cor$Y[,2],
-                        batches = as.factor(batches),
-                        group = as.factor(group))
-
-# Plotting the plot using ggplot() function
-ggplot2::ggplot(tsne_plot) + geom_point(aes(x=x, y=y, colour=group, shape=batches), size=3) +
-  theme_bw()
-
-ggsave("tutorial/PCA_corrected_confounded.png", height=5, width=6, dpi=300)
+ggarrange(plt, plt_adjori, plt_adj, ncol=1, nrow=3, common.legend=TRUE, legend="right")

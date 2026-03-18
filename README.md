@@ -9,9 +9,20 @@ This formulation extends the standard negative binomial regression model by inco
 L(\beta) = NLL(\beta) + \lambda \bigg( \alpha \| \beta \|_1 + \bigg( \frac{1-\alpha}{2} \bigg) \| \beta \|_2^2 \bigg)
 ```
 
+Parallelisation is implemented via OpenMP. OpenMP is not available by default on macOS and must be installed separately (e.g. via Homebrew: `brew install libomp`). 
+If OpenMP is unavailable, it will fall back to single-threaded execution.
+
 ## Installation
 
-reComBat-seq is available for installation via GitHub.
+Before use install edgeR from Bioconductor. 
+
+```r
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("edgeR")
+```
+
+reComBat-seq is then available for installation via GitHub.
 
 ```r
 # install.packages("devtools")
@@ -21,28 +32,16 @@ devtools::install_github("jas-st/reComBat-seq")
 
 ## Usage and Tutorial
 
-An example use case has been included in the `tutorial` folder. It analyses an Esophagus tissue dataset, containing cancer and healthy cells. 
-A raw count matrix from RNA-Seq studies has to be provided, without any normalization or transformation, as well as a vector for batch separation). The `group` parameter specifies additional biological covariates, in this case the disease label of the cells.
+An example use case has been included in the `tutorial` folder. It demonstrates batch correction on the RNA-seq dataset 
+used in the ComBat-seq[2] paper, which contains breast cancer cell lines across three batches with GFP controls and oncogene-overexpressing samples (HER2, EGFR, KRAS). 
+A raw count matrix from RNA-Seq studies has to be provided, without any normalization or transformation, as well as a vector for batch separation). 
+The `group` parameter specifies additional biological covariates, in this case the disease label of the cells. 
+For multiple biological variables the `covar_mod` parameter can be used. To demonstrate the main feature of reComBat-seq a singular matrix will be used.
 
 ```r
 recombatseq_df <- reComBat_seq(counts_df_reduced, batch = batches, group = group,
                              lambda_reg=0.8, alpha_reg=0.3)
 ```
-
-| Raw Data      | Corrected Data |
-| ------------- | -------------  |
-| <img src="https://github.com/jas-st/reComBat-seq/blob/main/tutorial/PCA_raw.png" width="500">  | <img src="https://github.com/jas-st/reComBat-seq/blob/main/tutorial/PCA_corrected.png" width="500">   |
-  
-For multiple biological variables the `covar_mod` parameter can be used. In this example the matrix from the tutorial will be used.
-
-```r
-recombatseq_df_conf <- reComBat_seq(counts_df_reduced, batch = batches, covar_mod = covmat_model,
-                                   lambda_reg=0.8, alpha_reg=0.3)
-```
-
-| Corrected Data      | Corrected Data (Singular matrix) |
-| ------------- | -------------  |
-| <img src="https://github.com/jas-st/reComBat-seq/blob/main/tutorial/PCA_corrected.png" width="500">  | <img src="https://github.com/jas-st/reComBat-seq/blob/main/tutorial/PCA_corrected_confounded.png" width="500">   |
 
 ## Arguments
 
@@ -50,6 +49,7 @@ recombatseq_df_conf <- reComBat_seq(counts_df_reduced, batch = batches, covar_mo
   - `batch` - batch covariate (only one vector allowed)
   - `group` - vector / factor for condition of interest
   - `covar_mod` - model matrix for other covariates to include in linear model besides batch and condition of interest
+  - `num_threads` - number of threads for parallel gene-wise regression using OpenMP, default is single-thread
 
 The regularization can be adjusted via the following parameters:
 

@@ -3,9 +3,13 @@ PKG_LIBS=$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 UNAME := $(shell uname)
 
 ifeq ($(UNAME), Darwin)
-  PKG_CFLAGS = -Xclang -fopenmp -I/usr/local/opt/libomp/include
-  PKG_CXXFLAGS = -Xclang -fopenmp -I/usr/local/opt/libomp/include
-  PKG_LIBS = -L/usr/local/opt/libomp/lib -lomp $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+  # Check if libomp is available (via Homebrew)
+  LIBOMP_PREFIX := $(shell brew --prefix libomp 2>/dev/null)
+  ifneq ($(LIBOMP_PREFIX),)
+    PKG_CFLAGS = -Xclang -fopenmp -I$(LIBOMP_PREFIX)/include
+    PKG_CXXFLAGS = -Xclang -fopenmp -I$(LIBOMP_PREFIX)/include
+    PKG_LIBS = -L$(LIBOMP_PREFIX)/lib -lomp $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+  endif
 else
   PKG_CFLAGS = -fopenmp
   PKG_CXXFLAGS = -fopenmp
