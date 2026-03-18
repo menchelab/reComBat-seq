@@ -55,7 +55,8 @@ SEXP fit_levenberg (SEXP y, SEXP offset, SEXP disp, SEXP weights, SEXP design,
     #ifdef _OPENMP
         if (n_threads > 0) {
           omp_set_num_threads(n_threads);
-          std::cout << "Max threads available: " << omp_get_max_threads() << std::endl;
+          //std::cout << "Max threads available: " << omp_get_max_threads() << std::endl;
+          Rprintf("Max threads available: %d\n", omp_get_max_threads());
 
     #pragma omp parallel
     {
@@ -72,7 +73,8 @@ SEXP fit_levenberg (SEXP y, SEXP offset, SEXP disp, SEXP weights, SEXP design,
 
     #pragma omp single
     {
-      std::cout << "Threads running: " << omp_get_num_threads() << std::endl;
+      //std::cout << "Threads running: " << omp_get_num_threads() << std::endl;
+      Rprintf("Threads running: %d\n", omp_get_num_threads());
     }
 
     #pragma omp for schedule(static)
