@@ -39,9 +39,14 @@ The `group` parameter specifies additional biological covariates, in this case t
 For multiple biological variables the `covar_mod` parameter can be used. To demonstrate the main feature of reComBat-seq a singular matrix will be used.
 
 ```r
-recombatseq_df <- reComBat_seq(counts_df_reduced, batch = batches, group = group,
+recombatseq_df <- reComBat_seq(counts_df_reduced, batch = batches, group = group, covar_mod = covmat
                              lambda_reg=0.8, alpha_reg=0.3)
 ```
+
+| Raw Data      | Corrected Data (Singular Design) |
+| ------------- | -------------  |
+| <img src="https://github.com/jas-st/reComBat-seq/blob/main/tutorial/PCA_raw.png" width="500">  | <img src="https://github.com/jas-st/reComBat-seq/blob/main/tutorial/PCA_recombatseq.png" width="500">   |
+  
 
 ## Arguments
 
