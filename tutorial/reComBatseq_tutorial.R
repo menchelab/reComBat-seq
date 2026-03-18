@@ -12,11 +12,19 @@ metadata <- read.csv("tutorial/test_metadata.csv")
 group_sub <- as.factor(metadata$X)
 batch_sub <- metadata$batch_sub
 
-# batch correction - confounded design
+# confounded design
 covmatdf <- as.data.frame(cbind(group_sub, group_sub))
 covmatdf[] <- lapply(covmatdf, as.factor)
 colnames(covmatdf) <- c("test1", "test2")
 covmat <- model.matrix(~., data = covmatdf)[, -1]
+
+# batch correction - original
+combatseq_og_df <- ComBat_seq(cts_sub, batch=batch_sub, group=group_sub)
+
+# batch correction - recombatseq
+combatseq_df <- reComBat_seq(cts_sub, batch=batch_sub, group=group_sub, covar_mod = covmat,
+                             lambda_reg = 0.8, alpha_reg = 0.3, num_threads = 0)
+
 
 ## Normalize library size - divide each column by its sum
 cts_norm <- apply(cts_sub, 2, function(x){x/sum(x)})
