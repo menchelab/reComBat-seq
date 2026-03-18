@@ -3,7 +3,7 @@ PKG_LIBS=$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 UNAME := $(shell uname)
 
 ifeq ($(UNAME), Darwin)
-  LIBOMP_PREFIX := $(shell brew --prefix libomp 2>/dev/null && echo $$?)
+  LIBOMP_PREFIX := $(shell brew --prefix libomp 2>/dev/null)
   LIBOMP_EXISTS := $(shell test -f $(LIBOMP_PREFIX)/include/omp.h && echo yes)
   ifneq ($(LIBOMP_EXISTS), yes)
     LIBOMP_PREFIX :=
