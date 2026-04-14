@@ -70,7 +70,7 @@ corrected.counts <- reComBat.seq(
 
   - `counts` - raw count matrix from genomic studies (dimensions gene x sample)
   - `batch` - vector containing batch assignment of samples
-  - `wanted.variation` - a data.frame containing the covariates you want to preserve in the data
+  - `wanted.variation` - a data.frame containing the covariates whose variation you want to preserve
   - `num.threads` - number of threads for parallel gene-wise regression using OpenMP, default is single-thread
 
 The regularization can be adjusted via the following parameters:
