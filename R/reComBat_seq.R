@@ -7,7 +7,7 @@
 #' reComBat_seq is an extension to the ComBat_seq method using regularized Negative Binomial model.
 #'
 #' @param counts Raw count matrix from genomic studies (dimensions gene x sample)
-#' @param batch vector containing batch assignment of samples. needs to be a vector of factors
+#' @param batch vector containing batch assignment of samples
 #' @param wanted.variation a data.frame containing the covariates you want to preserve in the data
 #' @param shrink Boolean, whether to apply empirical Bayes estimation on parameters
 #' @param shrink.disp Boolean, whether to apply empirical Bayes estimation on dispersion
