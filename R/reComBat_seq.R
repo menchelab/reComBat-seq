@@ -7,16 +7,14 @@
 #' reComBat_seq is an extension to the ComBat_seq method using regularized Negative Binomial model.
 #'
 #' @param counts Raw count matrix from genomic studies (dimensions gene x sample)
-#' @param batch Batch covariate (only one batch allowed)
-#' @param group Vector / factor for condition of interest
-#' @param covar_mod Model matrix for other covariates to include in linear model besides batch and condition of interest
-#' @param full_mod Boolean, if TRUE include condition of interest in model
+#' @param batch vector containing batch assignment of samples. needs to be a vector of factors
+#' @param wanted.variation a data.frame containing the covariates you want to preserve in the data
 #' @param shrink Boolean, whether to apply empirical Bayes estimation on parameters
 #' @param shrink.disp Boolean, whether to apply empirical Bayes estimation on dispersion
 #' @param gene.subset.n Number of genes to use in empirical Bayes estimation, only useful when shrink = TRUE
-#' @param lambda_reg Regularization strength
-#' @param alpha_reg Elastic Net Tuner, 1 for pure LASSO, 0 for pure ridge
-#' @param num_threads Threads for Paralellisation
+#' @param lambda.reg Regularization strength
+#' @param alpha.reg Elastic Net Tuner, 1 for pure LASSO, 0 for pure ridge
+#' @param num.threads Threads for Paralellisation
 #' @return data A probe x sample count matrix, adjusted for batch effects.
 #'
 #' @examples
@@ -26,9 +24,17 @@
 #' @export
 #'
 
-reComBat_seq <- function(counts, batch, group=NULL, covar_mod=NULL, full_mod=TRUE,
-                       shrink=FALSE, shrink.disp=FALSE, gene.subset.n=NULL,
-                       lambda_reg=0, alpha_reg=0, num_threads=0){
+reComBat_seq <- function(
+  counts, 
+  batch, 
+  wanted.variation=NULL,
+  shrink=FALSE, 
+  shrink.disp=FALSE, 
+  gene.subset.n=NULL,
+  lambda.reg=0.8, 
+  alpha.reg=0.3, 
+  num.threads=1
+){
   ########  Preparation  ########
   counts <- as.matrix(counts)
 
@@ -38,16 +44,7 @@ reComBat_seq <- function(counts, batch, group=NULL, covar_mod=NULL, full_mod=TRU
     stop("reComBat-seq doesn't support 1 sample per batch yet")
   }
 
-  message("Using THREADS: " , num_threads, "\n")
-
-  ## Remove genes with only 0 counts in any batch
-  #keep_lst <- lapply(levels(batch), function(b){
-  #  which(apply(counts[, batch==b], 1, function(x){!all(x==0)}))
-  #})
-  #keep <- Reduce(intersect, keep_lst)
-  #rm <- setdiff(1:nrow(counts), keep)
-  #countsOri <- counts
-  #counts <- counts[keep, ]
+  message("Using THREADS: " , num.threads, "\n")
 
   # require bioconductor 3.7, edgeR 3.22.1
   dge_obj <- DGEList(counts=counts)
@@ -61,38 +58,26 @@ reComBat_seq <- function(counts, batch, group=NULL, covar_mod=NULL, full_mod=TRU
   cat("Found",n_batch,'batches\n')
 
   ## Make design matrix
-  # batch
-  batchmod <- model.matrix(~-1+batch)  # colnames: levels(batch)
-  # covariate
-  group <- as.factor(group)
-  if(full_mod & nlevels(group)>1){
-    cat("Using full model in ComBat-seq.\n")
-    mod <- model.matrix(~group)
-  }else{
-    cat("Using null model in ComBat-seq.\n")
-    mod <- model.matrix(~1, data=as.data.frame(t(counts)))
+  design <- model.matrix(~-1+batch)  # colnames: levels(batch)
+  # covariates to preserve
+  if(!is.null(wanted.variation)){
+    wanted.variation <- do.call(
+      cbind, 
+      lapply(
+        1:ncol(wanted.variation), 
+        function(i){model.matrix(~as.factor(wanted.variation[,i]))}
+      )
+    )
+    design <- cbind(design, wanted.variation)
   }
-  # drop intercept in covariate model
-  if(!is.null(covar_mod)){
-    if(is.data.frame(covar_mod)){
-      covar_mod <- do.call(cbind, lapply(1:ncol(covar_mod), function(i){model.matrix(~covar_mod[,i])}))
-    }
-    covar_mod <- covar_mod[, !apply(covar_mod, 2, function(x){all(x==1)})]
-  }
-  # bind with biological condition of interest
-  mod <- cbind(mod, covar_mod)
-  # combine
-  design <- cbind(batchmod, mod)
 
   ## Check for intercept in covariates, and drop if present
   check <- apply(design, 2, function(x) all(x == 1))
-  #if(!is.null(ref)){check[ref]=FALSE} ## except don't throw away the reference batch indicator
   design <- as.matrix(design[,!check])
   cat("Adjusting for",ncol(design)-ncol(batchmod),'covariate(s) or covariate level(s)\n')
 
   ## Check if the design is confounded
   if(qr(design)$rank<ncol(design)){
-    #if(ncol(design)<=(n_batch)){stop("Batch variables are redundant! Remove one or more of the batch variables so they are no longer confounded")}
     if(ncol(design)==(n_batch+1)){stop("The covariate is confounded with batch!\n")}
     if(ncol(design)>(n_batch+1)){
       if((qr(design[,-c(1:n_batch)])$rank<ncol(design[,-c(1:n_batch)]))){cat('The covariates are confounded!\n')
