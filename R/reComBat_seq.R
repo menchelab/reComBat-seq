@@ -1,7 +1,7 @@
 # Based on ComBat_seq from the sva package (Zhang et al. 2020).
 # Extended by Zhasmina Stoyanova, 2026
 # Changes: replaced standard NB GLM with elastic net regularized NB GLM;
-#          added lambda_reg, alpha_reg, num_threads parameters throughout.
+#          added lambda.reg, alpha.reg, num.threads parameters throughout.
 #' Adjust for batch effects using an empirical Bayes framework in RNA-seq raw counts
 #'
 #' reComBat_seq is an extension to the ComBat_seq method using regularized Negative Binomial model.
@@ -24,7 +24,7 @@
 #' @export
 #'
 
-reComBat_seq <- function(
+reComBat.seq <- function(
   counts, 
   batch, 
   wanted.variation=NULL,
@@ -80,8 +80,12 @@ reComBat_seq <- function(
   if(qr(design)$rank<ncol(design)){
     if(ncol(design)==(n_batch+1)){stop("The covariate is confounded with batch!\n")}
     if(ncol(design)>(n_batch+1)){
-      if((qr(design[,-c(1:n_batch)])$rank<ncol(design[,-c(1:n_batch)]))){cat('The covariates are confounded!\n')
-      }else{cat("At least one covariate is confounded with batch!\n")}}
+      if((qr(design[,-c(1:n_batch)])$rank<ncol(design[,-c(1:n_batch)]))){
+        cat('The covariates are confounded!\n')
+      }else{
+        cat("At least one covariate is confounded with batch!\n")
+      }
+    }
   }
 
   ## Check for missing values in count matrix
@@ -95,9 +99,23 @@ reComBat_seq <- function(
   disp_common <- sapply(1:n_batch, function(i){
     if((n_batches[i] <= ncol(design)-ncol(batchmod)+1) | qr(mod[batches_ind[[i]], ])$rank < ncol(mod)){
       # not enough residual degree of freedom
-      return(estimateGLMCommonDisp(counts[, batches_ind[[i]]], design=NULL, subset=nrow(counts)))
+      return(
+        estimateGLMCommonDisp(
+          counts[, batches_ind[[i]]], 
+          design=NULL, 
+          subset=nrow(counts)
+        )
+      )
     }else{
-      return(estimateGLMCommonDisp(counts[, batches_ind[[i]]], design=mod[batches_ind[[i]], ], subset=nrow(counts), lambda_reg=lambda_reg, alpha_reg=alpha_reg))
+      return(
+        estimateGLMCommonDisp(
+          counts[, batches_ind[[i]]], 
+          design=mod[batches_ind[[i]], ], 
+          subset=nrow(counts), 
+          lambda_reg=lambda.reg, 
+          alpha_reg=alpha.reg
+        )
+      )
     }
   })
 
@@ -107,8 +125,16 @@ reComBat_seq <- function(
       # not enough residual degrees of freedom - use the common dispersion
       return(rep(disp_common[j], nrow(counts)))
     }else{
-      return(estimateGLMTagwiseDisp(counts[, batches_ind[[j]]], design=mod[batches_ind[[j]], ],
-                                    dispersion=disp_common[j], prior.df=0, lambda_reg=lambda_reg, alpha_reg=alpha_reg))
+      return(
+        estimateGLMTagwiseDisp(
+          counts[, batches_ind[[j]]], 
+          design=mod[batches_ind[[j]], ],
+          dispersion=disp_common[j], 
+          prior.df=0, 
+          lambda_reg=lambda.reg, 
+          alpha_reg=alpha.reg
+        )
+      )
     }
   })
   names(genewise_disp_lst) <- paste0('batch', levels(batch))
@@ -121,12 +147,36 @@ reComBat_seq <- function(
 
   ########  Estimate parameters from NB GLM  ########
   cat("Fitting the GLM model\n")
-
-  glm_f <- glmFit(dge_obj, design=design, dispersion=phi_matrix, prior.count=1e-4, lambda_reg=lambda_reg, alpha_reg=alpha_reg, num_threads=num_threads) #no intercept - nonEstimable; compute offset (library sizes) within function
+  # conform with multithreading logic
+  if(num.threads == 1) {
+    num.threads <- 0
+  }
+  # no intercept - nonEstimable; compute offset (library sizes) within function
+  glm_f <- glmFit(
+    dge_obj, 
+    design=design, 
+    dispersion=phi_matrix, 
+    prior.count=1e-4, 
+    lambda_reg=lambda.reg, 
+    alpha_reg=alpha.reg, 
+    num_threads=num.threads
+  )
   alpha_g <- glm_f$coefficients[, 1:n_batch] %*% as.matrix(n_batches/n_sample) #compute intercept as batch-size-weighted average from batches
-  new_offset <- t(vec2mat(getOffset(dge_obj), nrow(counts))) +   # original offset - sample (library) size
+  new_offset <- (
+    t(vec2mat(getOffset(dge_obj), nrow(counts))) +   # original offset - sample (library) size
     vec2mat(alpha_g, ncol(counts))  # new offset - gene background expression # getOffset(dge_obj) is the same as log(dge_obj$samples$lib.size
-  glm_f2 <- glmFit.default(dge_obj$counts, design=design, dispersion=phi_matrix, offset=new_offset, prior.count=1e-4,maxit=51, lambda_reg=lambda_reg, alpha_reg=alpha_reg, num_threads=num_threads)
+  )
+  glm_f2 <- glmFit.default(
+    dge_obj$counts, 
+    design=design, 
+    dispersion=phi_matrix, 
+    offset=new_offset, 
+    prior.count=1e-4,
+    maxit=51, 
+    lambda_reg=lambda.reg, 
+    alpha_reg=alpha.reg,  
+    num_threads=num.threads
+  )
   gamma_hat <- glm_f2$coefficients[, 1:n_batch]
   mu_hat <- glm_f2$fitted.values
   phi_hat <- do.call(cbind, genewise_disp_lst)
@@ -137,11 +187,24 @@ reComBat_seq <- function(
     mcint_fun <- monte_carlo_int_NB
     monte_carlo_res <- lapply(1:n_batch, function(ii){
       if(ii==1){
-        mcres <- mcint_fun(dat=counts[, batches_ind[[ii]]], mu=mu_hat[, batches_ind[[ii]]],
-                           gamma=gamma_hat[, ii], phi=phi_hat[, ii], gene.subset.n=gene.subset.n)
+        mcres <- mcint_fun(
+          dat=counts[, batches_ind[[ii]]], 
+          mu=mu_hat[, batches_ind[[ii]]],
+          gamma=gamma_hat[, ii], 
+          phi=phi_hat[, ii], 
+          gene.subset.n=gene.subset.n)
       }else{
-        invisible(capture.output(mcres <- mcint_fun(dat=counts[, batches_ind[[ii]]], mu=mu_hat[, batches_ind[[ii]]],
-                                                    gamma=gamma_hat[, ii], phi=phi_hat[, ii], gene.subset.n=gene.subset.n)))
+        invisible(
+          capture.output(
+            mcres <- mcint_fun(
+              dat=counts[, batches_ind[[ii]]], 
+              mu=mu_hat[, batches_ind[[ii]]],
+              gamma=gamma_hat[, ii], 
+              phi=phi_hat[, ii], 
+              gene.subset.n=gene.subset.n
+            )
+          )
+        )
       }
       return(mcres)
     })
@@ -162,11 +225,13 @@ reComBat_seq <- function(
     phi_star_mat <- phi_hat
   }
 
-
   ########  Obtain adjusted batch-free distribution  ########
   mu_star <- matrix(NA, nrow=nrow(counts), ncol=ncol(counts))
   for(jj in 1:n_batch){
-    mu_star[, batches_ind[[jj]]] <- exp(log(mu_hat[, batches_ind[[jj]]])-vec2mat(gamma_star_mat[, jj], n_batches[jj]))
+    mu_star[, batches_ind[[jj]]] <- exp(
+      log(mu_hat[, batches_ind[[jj]]]) - 
+      vec2mat(gamma_star_mat[, jj], n_batches[jj])
+    )
   }
   phi_star <- rowMeans(phi_star_mat)
 
@@ -180,19 +245,16 @@ reComBat_seq <- function(
     old_phi <- phi_hat[, kk]
     new_mu <- mu_star[, batches_ind[[kk]]]
     new_phi <- phi_star
-    adjust_counts[, batches_ind[[kk]]] <- match_quantiles(counts_sub=counts_sub,
-                                                          old_mu=old_mu, old_phi=old_phi,
-                                                          new_mu=new_mu, new_phi=new_phi)
+    adjust_counts[, batches_ind[[kk]]] <- match_quantiles(
+      counts_sub=counts_sub,
+      old_mu=old_mu, 
+      old_phi=old_phi,
+      new_mu=new_mu, 
+      new_phi=new_phi
+    )
   }
 
   dimnames(adjust_counts) <- dimnames(counts)
   return(adjust_counts)
-
-  ## Add back genes with only 0 counts in any batch (so that dimensions won't change)
-  #adjust_counts_whole <- matrix(NA, nrow=nrow(countsOri), ncol=ncol(countsOri))
-  #dimnames(adjust_counts_whole) <- dimnames(countsOri)
-  #adjust_counts_whole[keep, ] <- adjust_counts
-  #adjust_counts_whole[rm, ] <- countsOri[rm, ]
-  #return(adjust_counts_whole)
 }
 

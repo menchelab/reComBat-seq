@@ -2,7 +2,7 @@
 useDynLib(reComBatseq, .registration=TRUE, .fixes=".cxx_")
 
 #  Export only reComBat_seq
-export(reComBat_seq)
+export(reComBat.seq)
 
 # Modified S3 Methods
 S3method(estimateGLMCommonDisp, default)
