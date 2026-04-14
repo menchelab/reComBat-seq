@@ -16,7 +16,7 @@ meta <- read.table(
 )
 
 # applying recombatseq correction using disease as wanted covariate
-corrected <- reComBat_seq(
+corrected <- reComBat.seq(
     t(counts), 
     batch=meta$sra_study_acc, 
     wanted.variation=meta['Disease']

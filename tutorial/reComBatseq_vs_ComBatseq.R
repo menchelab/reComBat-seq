@@ -17,7 +17,7 @@ combatseq_og_df <- ComBat_seq(
   )
 
 # batch correction - recombatseq
-combatseq_df <- reComBat_seq(
+combatseq_df <- reComBat.seq(
   cts_sub, 
   batch=metadata$batch_sub, 
   wanted_variation=metadata['X']

@@ -30,20 +30,35 @@ devtools::install_github("jas-st/reComBat-seq")
 ```
 
 
-## Usage and Tutorial
+## Usage
 
-An example use case has been included in the `tutorial` folder. It demonstrates batch correction on the RNA-seq dataset 
-used in the ComBat-seq[2] paper, which contains breast cancer cell lines across three batches with GFP controls and oncogene-overexpressing samples (HER2, EGFR, KRAS). 
-A raw count matrix from RNA-Seq studies has to be provided, without any normalization or transformation, as well as a vector for batch separation). 
-The `group` parameter specifies additional biological covariates, in this case the disease label of the cells. 
-For multiple biological variables the `covar_mod` parameter can be used. To demonstrate the main feature of reComBat-seq a singular matrix will be used.
+The `tutorial` folder contains some examples including the code used to generate the below plots using the breast cancer data from the ComBat-seq[2] paper as well as code used to correct the muscular dystrophy data used in our study. Using reComBat-seq begins with a raw count matrix. We then need to identify the batch variable we want to remove as well as all the covariates we want to make sure to keep their variation aka `wanted.variation`. Examples of the latter one may be biological covariates like disease status or cell identity. The code below shows the usage principle
 
 ```r
 library(reComBatseq)
-recombatseq_df <- reComBat_seq(cts_sub, batch=batch_sub, group=group_sub, 
-                               covar_mod = covmat,
-                               lambda_reg = 0.8, alpha_reg = 0.3, 
-                               num_threads = 0)
+# reading in data from files
+raw.counts <- read.table(
+    'muscular_dystrophy.exp.tsv',
+    sep = '\t',
+    quote = '',
+    header = TRUE,
+    row.names = 'X'
+)
+
+meta <- read.table(
+    'muscular_dystrophy.meta.tsv',
+    sep = '\t',
+    quote = '',
+    header = TRUE,
+    row.names = 'X'
+)
+
+# applying recombatseq correction using disease as wanted covariate
+corrected.counts <- reComBat.seq(
+    t(raw.counts),
+    batch=meta$sra_study_acc, 
+    wanted.variation=meta['Disease']
+)
 ```
 
 | Raw Data      | Corrected Data (Singular Design) |
@@ -54,15 +69,14 @@ recombatseq_df <- reComBat_seq(cts_sub, batch=batch_sub, group=group_sub,
 ## Arguments
 
   - `counts` - raw count matrix from genomic studies (dimensions gene x sample)
-  - `batch` - batch covariate (only one vector allowed)
-  - `group` - vector / factor for condition of interest
-  - `covar_mod` - model matrix for other covariates to include in linear model besides batch and condition of interest
-  - `num_threads` - number of threads for parallel gene-wise regression using OpenMP, default is single-thread
+  - `batch` - vector containing batch assignment of samples
+  - `wanted.variation` - a data.frame containing the covariates you want to preserve in the data
+  - `num.threads` - number of threads for parallel gene-wise regression using OpenMP, default is single-thread
 
 The regularization can be adjusted via the following parameters:
 
-  - `lambda_reg` - controls the strength of the regularization, $\lambda$ in the above equation
-  - `alpha_reg` - controls the elastic net tuning, $\alpha$ in the above equation
+  - `lambda.reg` - controls the strength of the regularization, $\lambda$ in the above equation
+  - `alpha.reg` - controls the elastic net tuning, $\alpha$ in the above equation
 
 ## References
 1. Chen Y, Chen L, Lun ATL, Baldoni P, Smyth GK (2025). “edgeR v4: powerful differential analysis of sequencing data with expanded functionality and improved support for small counts and larger datasets.” Nucleic Acids Research, 53(2), gkaf018. doi:10.1093/nar/gkaf018.
