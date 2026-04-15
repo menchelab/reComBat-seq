@@ -96,34 +96,37 @@ reComBat.seq <- function(
   ########  Estimate gene-wise dispersions within each batch  ########
   cat("Estimating dispersions\n")
   ## Estimate common dispersion within each batch as an initial value
-  disp_common <- sapply(
-    1:n_batch, 
-    function(i) {
-      if((n_batches[i] <= ncol(design)-ncol(batchmod)+1) | qr(mod[batches_ind[[i]], ])$rank < ncol(mod)){
-        # not enough residual degree of freedom
-        return(
-          estimateGLMCommonDisp(
-            counts[, batches_ind[[i]]], 
-            design=NULL, 
-            subset=nrow(counts)
+  disp_common <- simplify2array(
+    mclapply(
+      1:n_batch, 
+      function(i) {
+        if((n_batches[i] <= ncol(design)-ncol(batchmod)+1) | qr(mod[batches_ind[[i]], ])$rank < ncol(mod)){
+          # not enough residual degree of freedom
+          return(
+            estimateGLMCommonDisp(
+              counts[, batches_ind[[i]]], 
+              design=NULL, 
+              subset=nrow(counts)
+            )
           )
-        )
-      } else {
-        return(
-          estimateGLMCommonDisp(
-            counts[, batches_ind[[i]]], 
-            design=mod[batches_ind[[i]], ], 
-            subset=nrow(counts), 
-            lambda_reg=lambda.reg, 
-            alpha_reg=alpha.reg
+        } else {
+          return(
+            estimateGLMCommonDisp(
+              counts[, batches_ind[[i]]], 
+              design=mod[batches_ind[[i]], ], 
+              subset=nrow(counts), 
+              lambda_reg=lambda.reg, 
+              alpha_reg=alpha.reg
+            )
           )
-        )
-      }
-    }
+        }
+      },
+      mc.cores = num.threads
+    )
   )
 
   ## Estimate gene-wise dispersion within each batch
-  genewise_disp_lst <- lapply(
+  genewise_disp_lst <- mclapply(
     1:n_batch, 
     function(j) {
       if((n_batches[j] <= ncol(design)-ncol(batchmod)+1) | qr(mod[batches_ind[[j]], ])$rank < ncol(mod)){
@@ -141,7 +144,8 @@ reComBat.seq <- function(
           )
         )
       }
-    }
+    },
+    mc.cores = num.threads
   )
   names(genewise_disp_lst) <- paste0('batch', levels(batch))
 
@@ -191,7 +195,7 @@ reComBat.seq <- function(
   if(shrink){
     cat("Apply shrinkage - computing posterior estimates for parameters\n")
     mcint_fun <- monte_carlo_int_NB
-    monte_carlo_res <- lapply(
+    monte_carlo_res <- mclapply(
       1:n_batch, 
       function(ii) {
         if(ii==1) {
@@ -215,7 +219,8 @@ reComBat.seq <- function(
           )
         }
         return(mcres)
-      }
+      },
+      mc.cores = num.threads
     )
     names(monte_carlo_res) <- paste0('batch', levels(batch))
 
@@ -247,23 +252,27 @@ reComBat.seq <- function(
 
   ########  Adjust the data  ########
   cat("Adjusting the data\n")
-  adjust_counts <- matrix(NA, nrow=nrow(counts), ncol=ncol(counts))
-  for(kk in 1:n_batch) {
-    counts_sub <- counts[, batches_ind[[kk]]]
-    old_mu <- mu_hat[, batches_ind[[kk]]]
-    old_phi <- phi_hat[, kk]
-    new_mu <- mu_star[, batches_ind[[kk]]]
-    new_phi <- phi_star
-    adjust_counts[, batches_ind[[kk]]] <- match_quantiles(
-      counts_sub=counts_sub,
-      old_mu=old_mu, 
-      old_phi=old_phi,
-      new_mu=new_mu, 
-      new_phi=new_phi
+  adjusted_counts <- cbind(
+    simplify2array(
+      mclapply(
+        1:n_batch,
+        function(kk) {
+          return(
+            match_quantiles(
+              counts_sub=counts[, batches_ind[[kk]]],
+              old_mu=mu_hat[, batches_ind[[kk]]], 
+              old_phi=phi_hat[, kk],
+              new_mu=mu_star[, batches_ind[[kk]]], 
+              new_phi=phi_star
+            ) 
+          )
+        },
+        mc.cores = num.threads
+      )
     )
-  }
+  )
 
-  dimnames(adjust_counts) <- dimnames(counts)
-  return(adjust_counts)
+  dimnames(adjusted_counts) <- dimnames(counts)
+  return(adjusted_counts)
 }
 
