@@ -44,7 +44,7 @@ reComBat.seq <- function(
     stop("reComBat-seq doesn't support 1 sample per batch yet")
   }
 
-  message("Using THREADS: " , num.threads, "\n")
+  message("Using THREADS: " , num.threads)
 
   # require bioconductor 3.7, edgeR 3.22.1
   dge_obj <- DGEList(counts=counts)
