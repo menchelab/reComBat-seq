@@ -60,6 +60,7 @@ reComBat.seq <- function(
   design <- model.matrix(~-1+batch)  # colnames: levels(batch)
   # covariates to preserve
   if(!is.null(wanted.variation)) {
+    n_covariates <- ncol(wanted.variation)
     wanted.variation[] <- lapply(wanted.variation, as.factor)
     wanted.variation <- do.call(
       cbind, 
@@ -72,16 +73,16 @@ reComBat.seq <- function(
     intercept <- data.frame(intercept = rep(1, dim(wanted.variation)[1]))
     colnames(intercept) <- c('(Intercept)')
     mod <- cbind(intercept, wanted.variation[, !apply(wanted.variation, 2, function(x){all(x==1)})])
-
+    cat("Adjusting for", n_covariates, 'covariates with a total of', ncol(wanted.variation), 'covariate level(s)\n')
     design <- cbind(design, wanted.variation)
   } else {
     mod <- model.matrix(~1, data = as.data.frame(t(counts)))
+    cat('No covariates to adjust for')
   }
 
   ## Check for intercept in covariates, and drop if present
   is.intercept <- apply(design, 2, function(x) all(x == 1))
   design <- as.matrix(design[,!is.intercept])
-  cat("Adjusting for",ncol(design)-n_batch,'covariate(s) or covariate level(s)\n')
 
   ## Check if the design is confounded
   if(qr(design)$rank<ncol(design)) {
