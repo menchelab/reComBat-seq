@@ -53,7 +53,6 @@ reComBat.seq <- function(
   n_batch <- nlevels(batch)  # number of batches
   batches_ind <- lapply(1:n_batch, function(i){which(batch==levels(batch)[i])}) # list of samples in each batch
   n_batches <- sapply(batches_ind, length)
-  #if(any(n_batches==1)){mean_only=TRUE; cat("Note: one batch has only one sample, setting mean.only=TRUE\n")}
   n_sample <- sum(n_batches)
   cat("Found",n_batch,'batches\n')
 
@@ -61,21 +60,28 @@ reComBat.seq <- function(
   design <- model.matrix(~-1+batch)  # colnames: levels(batch)
   # covariates to preserve
   if(!is.null(wanted.variation)) {
+    wanted.variation[] <- lapply(wanted.variation, as.factor)
     wanted.variation <- do.call(
       cbind, 
       lapply(
         1:ncol(wanted.variation), 
-        function(i){model.matrix(~as.factor(wanted.variation[,i]))}
+        function(i){model.matrix(~wanted.variation[,i])}
       )
     )
+    # this is to emulate the mod variable which is used further down
+    intercept <- data.frame(intercept = rep(1, dim(wanted.variation)[1]))
+    colnames(intercept) <- c('(Intercept)')
+    mod <- cbind(intercept, wanted.variation[, !apply(wanted.variation, 2, function(x){all(x==1)})])
+
     design <- cbind(design, wanted.variation)
+  } else {
+    mod <- model.matrix(~1, data = as.data.frame(t(counts)))
   }
 
   ## Check for intercept in covariates, and drop if present
-  batchmod <- model.matrix(~-1+batch) # leaving this here to avoid having to refactor too much
-  check <- apply(design, 2, function(x) all(x == 1))
-  design <- as.matrix(design[,!check])
-  cat("Adjusting for",ncol(design)-ncol(batchmod),'covariate(s) or covariate level(s)\n')
+  is.intercept <- apply(design, 2, function(x) all(x == 1))
+  design <- as.matrix(design[,!is.intercept])
+  cat("Adjusting for",ncol(design)-n_batch,'covariate(s) or covariate level(s)\n')
 
   ## Check if the design is confounded
   if(qr(design)$rank<ncol(design)) {
@@ -101,7 +107,7 @@ reComBat.seq <- function(
     mclapply(
       1:n_batch, 
       function(i) {
-        if((n_batches[i] <= ncol(design)-ncol(batchmod)+1) | qr(mod[batches_ind[[i]], ])$rank < ncol(mod)){
+        if((n_batches[i] <= ncol(design)-n_batch+1) | qr(mod[batches_ind[[i]], ])$rank < ncol(mod)){
           # not enough residual degree of freedom
           return(
             estimateGLMCommonDisp(
@@ -130,7 +136,7 @@ reComBat.seq <- function(
   genewise_disp_lst <- mclapply(
     1:n_batch, 
     function(j) {
-      if((n_batches[j] <= ncol(design)-ncol(batchmod)+1) | qr(mod[batches_ind[[j]], ])$rank < ncol(mod)){
+      if((n_batches[j] <= ncol(design)-n_batch+1) | qr(mod[batches_ind[[j]], ])$rank < ncol(mod)){
         # not enough residual degrees of freedom - use the common dispersion
         return(rep(disp_common[j], nrow(counts)))
       } else {
@@ -160,7 +166,9 @@ reComBat.seq <- function(
   cat("Fitting the GLM model\n")
   # conform with multithreading logic
   if(num.threads == 1) {
-    num.threads <- 0
+    use_threads <- 0
+  } else {
+    use_threads <- num.threads
   }
   # no intercept - nonEstimable; compute offset (library sizes) within function
   glm_f <- glmFit(
@@ -170,7 +178,7 @@ reComBat.seq <- function(
     prior.count=1e-4, 
     lambda_reg=lambda.reg, 
     alpha_reg=alpha.reg, 
-    num_threads=num.threads
+    num_threads=use_threads
   )
   alpha_g <- glm_f$coefficients[, 1:n_batch] %*% as.matrix(n_batches/n_sample) #compute intercept as batch-size-weighted average from batches
   new_offset <- (
@@ -186,7 +194,7 @@ reComBat.seq <- function(
     maxit=51, 
     lambda_reg=lambda.reg, 
     alpha_reg=alpha.reg,  
-    num_threads=num.threads
+    num_threads=use_threads
   )
   gamma_hat <- glm_f2$coefficients[, 1:n_batch]
   mu_hat <- glm_f2$fitted.values
