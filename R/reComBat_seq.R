@@ -261,23 +261,22 @@ reComBat.seq <- function(
 
   ########  Adjust the data  ########
   cat("Adjusting the data\n")
-  adjusted_counts <- cbind(
-    simplify2array(
-      mclapply(
-        1:n_batch,
-        function(kk) {
-          return(
-            match_quantiles(
-              counts_sub=counts[, batches_ind[[kk]]],
-              old_mu=mu_hat[, batches_ind[[kk]]], 
-              old_phi=phi_hat[, kk],
-              new_mu=mu_star[, batches_ind[[kk]]], 
-              new_phi=phi_star
-            ) 
-          )
-        },
-        mc.cores = num.threads
-      )
+  adjusted_counts <- do.call(
+    cbind,
+    mclapply(
+      1:n_batch,
+      function(kk) {
+        return(
+          match_quantiles(
+            counts_sub=counts[, batches_ind[[kk]]],
+            old_mu=mu_hat[, batches_ind[[kk]]], 
+            old_phi=phi_hat[, kk],
+            new_mu=mu_star[, batches_ind[[kk]]], 
+            new_phi=phi_star
+          ) 
+        )
+      },
+      mc.cores = num.threads
     )
   )
 
