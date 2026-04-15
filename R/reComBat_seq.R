@@ -72,6 +72,7 @@ reComBat.seq <- function(
   }
 
   ## Check for intercept in covariates, and drop if present
+  batchmod <- model.matrix(~-1+batch) # leaving this here to avoid having to refactor too much
   check <- apply(design, 2, function(x) all(x == 1))
   design <- as.matrix(design[,!check])
   cat("Adjusting for",ncol(design)-ncol(batchmod),'covariate(s) or covariate level(s)\n')
