@@ -60,7 +60,7 @@ reComBat.seq <- function(
   ## Make design matrix
   design <- model.matrix(~-1+batch)  # colnames: levels(batch)
   # covariates to preserve
-  if(!is.null(wanted.variation)){
+  if(!is.null(wanted.variation)) {
     wanted.variation <- do.call(
       cbind, 
       lapply(
@@ -77,12 +77,12 @@ reComBat.seq <- function(
   cat("Adjusting for",ncol(design)-ncol(batchmod),'covariate(s) or covariate level(s)\n')
 
   ## Check if the design is confounded
-  if(qr(design)$rank<ncol(design)){
-    if(ncol(design)==(n_batch+1)){stop("The covariate is confounded with batch!\n")}
-    if(ncol(design)>(n_batch+1)){
+  if(qr(design)$rank<ncol(design)) {
+    if(ncol(design)==(n_batch+1)) {stop("The covariate is confounded with batch!\n")}
+    if(ncol(design)>(n_batch+1)) {
       if((qr(design[,-c(1:n_batch)])$rank<ncol(design[,-c(1:n_batch)]))){
         cat('The covariates are confounded!\n')
-      }else{
+      } else {
         cat("At least one covariate is confounded with batch!\n")
       }
     }
@@ -96,52 +96,58 @@ reComBat.seq <- function(
   ########  Estimate gene-wise dispersions within each batch  ########
   cat("Estimating dispersions\n")
   ## Estimate common dispersion within each batch as an initial value
-  disp_common <- sapply(1:n_batch, function(i){
-    if((n_batches[i] <= ncol(design)-ncol(batchmod)+1) | qr(mod[batches_ind[[i]], ])$rank < ncol(mod)){
-      # not enough residual degree of freedom
-      return(
-        estimateGLMCommonDisp(
-          counts[, batches_ind[[i]]], 
-          design=NULL, 
-          subset=nrow(counts)
+  disp_common <- sapply(
+    1:n_batch, 
+    function(i) {
+      if((n_batches[i] <= ncol(design)-ncol(batchmod)+1) | qr(mod[batches_ind[[i]], ])$rank < ncol(mod)){
+        # not enough residual degree of freedom
+        return(
+          estimateGLMCommonDisp(
+            counts[, batches_ind[[i]]], 
+            design=NULL, 
+            subset=nrow(counts)
+          )
         )
-      )
-    }else{
-      return(
-        estimateGLMCommonDisp(
-          counts[, batches_ind[[i]]], 
-          design=mod[batches_ind[[i]], ], 
-          subset=nrow(counts), 
-          lambda_reg=lambda.reg, 
-          alpha_reg=alpha.reg
+      } else {
+        return(
+          estimateGLMCommonDisp(
+            counts[, batches_ind[[i]]], 
+            design=mod[batches_ind[[i]], ], 
+            subset=nrow(counts), 
+            lambda_reg=lambda.reg, 
+            alpha_reg=alpha.reg
+          )
         )
-      )
+      }
     }
-  })
+  )
 
   ## Estimate gene-wise dispersion within each batch
-  genewise_disp_lst <- lapply(1:n_batch, function(j){
-    if((n_batches[j] <= ncol(design)-ncol(batchmod)+1) | qr(mod[batches_ind[[j]], ])$rank < ncol(mod)){
-      # not enough residual degrees of freedom - use the common dispersion
-      return(rep(disp_common[j], nrow(counts)))
-    }else{
-      return(
-        estimateGLMTagwiseDisp(
-          counts[, batches_ind[[j]]], 
-          design=mod[batches_ind[[j]], ],
-          dispersion=disp_common[j], 
-          prior.df=0, 
-          lambda_reg=lambda.reg, 
-          alpha_reg=alpha.reg
+  genewise_disp_lst <- lapply(
+    1:n_batch, 
+    function(j) {
+      if((n_batches[j] <= ncol(design)-ncol(batchmod)+1) | qr(mod[batches_ind[[j]], ])$rank < ncol(mod)){
+        # not enough residual degrees of freedom - use the common dispersion
+        return(rep(disp_common[j], nrow(counts)))
+      } else {
+        return(
+          estimateGLMTagwiseDisp(
+            counts[, batches_ind[[j]]], 
+            design=mod[batches_ind[[j]], ],
+            dispersion=disp_common[j], 
+            prior.df=0, 
+            lambda_reg=lambda.reg, 
+            alpha_reg=alpha.reg
+          )
         )
-      )
+      }
     }
-  })
+  )
   names(genewise_disp_lst) <- paste0('batch', levels(batch))
 
   ## construct dispersion matrix
   phi_matrix <- matrix(NA, nrow=nrow(counts), ncol=ncol(counts))
-  for(k in 1:n_batch){
+  for(k in 1:n_batch) {
     phi_matrix[, batches_ind[[k]]] <- vec2mat(genewise_disp_lst[[k]], n_batches[k])
   }
 
@@ -185,29 +191,32 @@ reComBat.seq <- function(
   if(shrink){
     cat("Apply shrinkage - computing posterior estimates for parameters\n")
     mcint_fun <- monte_carlo_int_NB
-    monte_carlo_res <- lapply(1:n_batch, function(ii){
-      if(ii==1){
-        mcres <- mcint_fun(
-          dat=counts[, batches_ind[[ii]]], 
-          mu=mu_hat[, batches_ind[[ii]]],
-          gamma=gamma_hat[, ii], 
-          phi=phi_hat[, ii], 
-          gene.subset.n=gene.subset.n)
-      }else{
-        invisible(
-          capture.output(
-            mcres <- mcint_fun(
-              dat=counts[, batches_ind[[ii]]], 
-              mu=mu_hat[, batches_ind[[ii]]],
-              gamma=gamma_hat[, ii], 
-              phi=phi_hat[, ii], 
-              gene.subset.n=gene.subset.n
+    monte_carlo_res <- lapply(
+      1:n_batch, 
+      function(ii) {
+        if(ii==1) {
+          mcres <- mcint_fun(
+            dat=counts[, batches_ind[[ii]]], 
+            mu=mu_hat[, batches_ind[[ii]]],
+            gamma=gamma_hat[, ii], 
+            phi=phi_hat[, ii], 
+            gene.subset.n=gene.subset.n)
+        } else {
+          invisible(
+            capture.output(
+              mcres <- mcint_fun(
+                dat=counts[, batches_ind[[ii]]], 
+                mu=mu_hat[, batches_ind[[ii]]],
+                gamma=gamma_hat[, ii], 
+                phi=phi_hat[, ii], 
+                gene.subset.n=gene.subset.n
+              )
             )
           )
-        )
+        }
+        return(mcres)
       }
-      return(mcres)
-    })
+    )
     names(monte_carlo_res) <- paste0('batch', levels(batch))
 
     gamma_star_mat <- lapply(monte_carlo_res, function(res){res$gamma_star})
@@ -215,11 +224,11 @@ reComBat.seq <- function(
     phi_star_mat <- lapply(monte_carlo_res, function(res){res$phi_star})
     phi_star_mat <- do.call(cbind, phi_star_mat)
 
-    if(!shrink.disp){
+    if(!shrink.disp) {
       cat("Apply shrinkage to mean only\n")
       phi_star_mat <- phi_hat
     }
-  }else{
+  } else {
     cat("Shrinkage off - using GLM estimates for parameters\n")
     gamma_star_mat <- gamma_hat
     phi_star_mat <- phi_hat
@@ -227,7 +236,7 @@ reComBat.seq <- function(
 
   ########  Obtain adjusted batch-free distribution  ########
   mu_star <- matrix(NA, nrow=nrow(counts), ncol=ncol(counts))
-  for(jj in 1:n_batch){
+  for(jj in 1:n_batch) {
     mu_star[, batches_ind[[jj]]] <- exp(
       log(mu_hat[, batches_ind[[jj]]]) - 
       vec2mat(gamma_star_mat[, jj], n_batches[jj])
@@ -239,7 +248,7 @@ reComBat.seq <- function(
   ########  Adjust the data  ########
   cat("Adjusting the data\n")
   adjust_counts <- matrix(NA, nrow=nrow(counts), ncol=ncol(counts))
-  for(kk in 1:n_batch){
+  for(kk in 1:n_batch) {
     counts_sub <- counts[, batches_ind[[kk]]]
     old_mu <- mu_hat[, batches_ind[[kk]]]
     old_phi <- phi_hat[, kk]
