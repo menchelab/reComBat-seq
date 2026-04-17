@@ -73,7 +73,7 @@ reComBat.seq <- function(
     intercept <- data.frame(intercept = rep(1, dim(wanted.variation)[1]))
     colnames(intercept) <- c('(Intercept)')
     mod <- cbind(intercept, wanted.variation[, !apply(wanted.variation, 2, function(x){all(x==1)})])
-    message("Adjusting for", n_covariates, 'covariates with a total of', ncol(wanted.variation), 'covariate level(s)')
+    message("Adjusting for ", n_covariates, ' covariates with a total of ', ncol(wanted.variation), ' covariate level(s)')
     design <- cbind(design, wanted.variation)
   } else {
     mod <- model.matrix(~1, data = as.data.frame(t(counts)))
