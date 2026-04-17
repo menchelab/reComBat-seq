@@ -54,7 +54,7 @@ reComBat.seq <- function(
   batches_ind <- lapply(1:n_batch, function(i){which(batch==levels(batch)[i])}) # list of samples in each batch
   n_batches <- sapply(batches_ind, length)
   n_sample <- sum(n_batches)
-  message("Found",n_batch,'batches')
+  message("Found ",n_batch,' batches')
 
   ## Make design matrix
   design <- model.matrix(~-1+batch)  # colnames: levels(batch)
