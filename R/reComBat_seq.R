@@ -54,7 +54,7 @@ reComBat.seq <- function(
   batches_ind <- lapply(1:n_batch, function(i){which(batch==levels(batch)[i])}) # list of samples in each batch
   n_batches <- sapply(batches_ind, length)
   n_sample <- sum(n_batches)
-  cat("Found",n_batch,'batches\n')
+  message("Found",n_batch,'batches')
 
   ## Make design matrix
   design <- model.matrix(~-1+batch)  # colnames: levels(batch)
@@ -73,11 +73,11 @@ reComBat.seq <- function(
     intercept <- data.frame(intercept = rep(1, dim(wanted.variation)[1]))
     colnames(intercept) <- c('(Intercept)')
     mod <- cbind(intercept, wanted.variation[, !apply(wanted.variation, 2, function(x){all(x==1)})])
-    cat("Adjusting for", n_covariates, 'covariates with a total of', ncol(wanted.variation), 'covariate level(s)\n')
+    message("Adjusting for", n_covariates, 'covariates with a total of', ncol(wanted.variation), 'covariate level(s)')
     design <- cbind(design, wanted.variation)
   } else {
     mod <- model.matrix(~1, data = as.data.frame(t(counts)))
-    cat('No covariates to adjust for')
+    message('No covariates to adjust for')
   }
 
   ## Check for intercept in covariates, and drop if present
@@ -86,23 +86,23 @@ reComBat.seq <- function(
 
   ## Check if the design is confounded
   if(qr(design)$rank<ncol(design)) {
-    if(ncol(design)==(n_batch+1)) {stop("The covariate is confounded with batch!\n")}
+    if(ncol(design)==(n_batch+1)) {stop("The covariate is confounded with batch!")}
     if(ncol(design)>(n_batch+1)) {
       if((qr(design[,-c(1:n_batch)])$rank<ncol(design[,-c(1:n_batch)]))){
-        cat('The covariates are confounded!\n')
+        message('The covariates are confounded!\n')
       } else {
-        cat("At least one covariate is confounded with batch!\n")
+        message("At least one covariate is confounded with batch!")
       }
     }
   }
 
   ## Check for missing values in count matrix
   NAs = any(is.na(counts))
-  if(NAs){cat(c('Found',sum(is.na(counts)),'Missing Data Values\n'),sep=' ')}
+  if(NAs){message(c('Found',sum(is.na(counts)),'Missing Data Values'),sep=' ')}
 
 
   ########  Estimate gene-wise dispersions within each batch  ########
-  cat("Estimating dispersions\n")
+  message("Estimating dispersions")
   ## Estimate common dispersion within each batch as an initial value
   disp_common <- simplify2array(
     mclapply(
@@ -164,7 +164,7 @@ reComBat.seq <- function(
   }
 
   ########  Estimate parameters from NB GLM  ########
-  cat("Fitting the GLM model\n")
+  message("Fitting the GLM model")
   # conform with multithreading logic
   if(num.threads == 1) {
     use_threads <- 0
@@ -203,7 +203,7 @@ reComBat.seq <- function(
 
   ########  In each batch, compute posterior estimation through Monte-Carlo integration  ########
   if(shrink){
-    cat("Apply shrinkage - computing posterior estimates for parameters\n")
+    message("Apply shrinkage - computing posterior estimates for parameters")
     mcint_fun <- monte_carlo_int_NB
     monte_carlo_res <- mclapply(
       1:n_batch, 
@@ -240,11 +240,11 @@ reComBat.seq <- function(
     phi_star_mat <- do.call(cbind, phi_star_mat)
 
     if(!shrink.disp) {
-      cat("Apply shrinkage to mean only\n")
+      message("Apply shrinkage to mean only")
       phi_star_mat <- phi_hat
     }
   } else {
-    cat("Shrinkage off - using GLM estimates for parameters\n")
+    message("Shrinkage off - using GLM estimates for parameters")
     gamma_star_mat <- gamma_hat
     phi_star_mat <- phi_hat
   }
@@ -261,7 +261,7 @@ reComBat.seq <- function(
 
 
   ########  Adjust the data  ########
-  cat("Adjusting the data\n")
+  message("Adjusting the data")
   adjusted_counts <- do.call(
     cbind,
     mclapply(
