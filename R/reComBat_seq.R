@@ -282,6 +282,6 @@ reComBat.seq <- function(
   )
 
   dimnames(adjusted_counts) <- dimnames(counts[,do.call(c, batches_ind)])
-  return(adjusted_counts)
+  return(adjusted_counts[,colnames(counts)])
 }
 
