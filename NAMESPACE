@@ -2,7 +2,7 @@
 useDynLib(reComBatseq, .registration=TRUE, .fixes=".cxx_")
 
 #  Export only reComBat_seq
-export(reComBat_seq)
+export(reComBat.seq)
 
 # Modified S3 Methods
 S3method(estimateGLMCommonDisp, default)
@@ -13,6 +13,8 @@ S3method(estimateGLMTagwiseDisp, DGEList)
 # Imports
 import(edgeR)
 import(methods)
+import(limma)
+import(parallel)
 importFrom("locfit", locfit)
 importFrom("Rcpp", sourceCpp)
 importFrom("stats", "dnbinom", "model.matrix", "optimize", "pchisq", "pnbinom", "qnbinom")
