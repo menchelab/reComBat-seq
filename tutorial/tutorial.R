@@ -1,6 +1,6 @@
 # reading in data from files
 counts <- read.table(
-    'muscular_dystrophy.exp.tsv',
+    'psoriasis.all.exp.tsv',
     sep = '\t',
     quote = '',
     header = TRUE,
@@ -8,7 +8,7 @@ counts <- read.table(
 )
 
 meta <- read.table(
-    'muscular_dystrophy.meta.tsv',
+    'psoriasis.all.meta.tsv',
     sep = '\t',
     quote = '',
     header = TRUE,
