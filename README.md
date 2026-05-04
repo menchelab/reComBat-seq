@@ -26,7 +26,7 @@ reComBat-seq is then available for installation via GitHub.
 
 ```r
 # install.packages("devtools")
-devtools::install_github("jas-st/reComBat-seq")
+devtools::install_github("menchelab/reComBat-seq")
 ```
 
 
@@ -38,7 +38,7 @@ The `tutorial` folder contains some examples including the code used to generate
 library(reComBatseq)
 # reading in data from files
 raw.counts <- read.table(
-    'muscular_dystrophy.exp.tsv',
+    'psoriasis.exp.tsv',
     sep = '\t',
     quote = '',
     header = TRUE,
@@ -46,7 +46,7 @@ raw.counts <- read.table(
 )
 
 meta <- read.table(
-    'muscular_dystrophy.meta.tsv',
+    'psoriasis.meta.tsv',
     sep = '\t',
     quote = '',
     header = TRUE,
