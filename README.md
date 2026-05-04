@@ -60,7 +60,7 @@ corrected.counts <- reComBat.seq(
     wanted.variation=meta['Disease']
 )
 ```
-<img src="https://github.com/menchelab/reComBat-seq/blob/smallimprovments/tutorial/recombat_comparison-01.png">
+<img src="https://github.com/menchelab/reComBat-seq/blob/main/tutorial/recombat_comparison-01.png">
 
 Please note that the package currently relies on openMP. This can cause some issues with local openBLAS installations where nested threading occurs in instances where datasets become very large (in our case like 25k cells / samples). This can unfortunately only be fixed by recompiling the local openBLAS installation. As a low effort workaround we recommend the following. Either set `OPENBLAS_NUM_THREADS=1` before starting R like so
 ```
