@@ -102,7 +102,7 @@ reComBat.seq <- function(
 
 
   ########  Estimate gene-wise dispersions within each batch  ########
-  message("Estimating dispersions")
+  message("Estimating common dispersions per batch")
   ## Estimate common dispersion within each batch as an initial value
   disp_common <- simplify2array(
     mclapply(
@@ -134,6 +134,7 @@ reComBat.seq <- function(
   )
 
   ## Estimate gene-wise dispersion within each batch
+  message("Estimating gene-wise dispersions per batch")
   genewise_disp_lst <- mclapply(
     1:n_batch, 
     function(j) {
